@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Avatar 3D</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <script type="importmap">
+    { "imports": {
+      "three": "/vendor/three/build/three.module.js",
+      "three/addons/": "/vendor/three/examples/jsm/",
+      "@recast-navigation/core": "/vendor/recast/core/dist/index.mjs",
+      "@recast-navigation/generators": "/vendor/recast/generators/dist/index.mjs",
+      "@recast-navigation/wasm": "/vendor/recast/wasm/dist/recast-navigation.wasm-compat.js",
+      "@recast-navigation/three": "/vendor/recast/three/dist/index.mjs"
+    } }
+  </script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="logo" aria-hidden="true"></span><strong>AI Avatar 3D</strong></div>
+    <label class="map-picker">
+      <span class="visually-hidden" data-i18n="map.pick">เลือก Map</span>
+      <select id="map-select" data-i18n-aria-label="map.pick"></select>
+    </label>
+    <h1 id="map-title" data-i18n="loading">กำลังโหลด…</h1>
+    <span id="mode-badge" class="badge" hidden data-i18n="author.mode">Author mode</span>
+    <div class="lang-switch" role="group" aria-label="Language / ภาษา">
+      <button type="button" data-lang="th" aria-pressed="true">ไทย</button>
+      <button type="button" data-lang="en" aria-pressed="false">EN</button>
+    </div>
+  </header>
+
+  <main class="stage">
+    <aside id="panel" class="panel" data-i18n-aria-label="panel">
+      <button id="panel-toggle" class="panel-toggle" data-i18n-aria-label="panel.toggle" aria-expanded="true">‹</button>
+      <div class="panel-body">
+        <p id="map-description" class="muted"></p>
+        <section>
+          <h2 data-i18n="show">แสดงในฉาก</h2>
+          <label class="switch"><input type="checkbox" id="toggle-pins" checked><span data-i18n="show.pins">ชื่อ Pin</span></label>
+          <label class="switch"><input type="checkbox" id="toggle-avatar-name" checked><span data-i18n="show.avatar">ชื่อ Avatar</span></label>
+          <label class="switch"><input type="checkbox" id="toggle-flash"><span data-i18n="show.flash">Flash speed</span></label>
+        </section>
+        <section>
+          <h2 data-i18n="gestures">ท่าทาง</h2>
+          <div id="gesture-list" class="gesture-list"></div>
+        </section>
+        <section>
+          <h2 id="stations-heading">Station</h2>
+          <ul id="station-list" class="station-list"></ul>
+        </section>
+        <section id="author-tools" hidden>
+          <h2>Author</h2>
+          <p class="muted" data-i18n="author.hint"></p>
+          <div class="row">
+            <button id="set-spawn" class="secondary" data-i18n="author.spawn"></button>
+          </div>
+          <label class="field">unitScale <input id="unit-scale" type="number" step="0.001" min="0.0001"></label>
+          <div class="row">
+            <button id="save-map" data-i18n="author.save"></button>
+            <button id="download-map" class="secondary" data-i18n="author.download"></button>
+          </div>
+          <h3 data-i18n="gesture.upload.heading">เพิ่ม Gesture ใหม่</h3>
+          <form id="gesture-form" class="gesture-upload-form" novalidate>
+            <label class="field">
+              <span data-i18n="gesture.upload.file">ไฟล์ท่าทาง (.glb .fbx .bvh)</span>
+              <input type="file" id="gesture-file" accept=".glb,.fbx,.bvh" required>
+            </label>
+            <label class="field">
+              <span data-i18n="gesture.upload.id">ID (a-z, 0-9, -)</span>
+              <input id="gesture-id" type="text" pattern="[a-z0-9][a-z0-9\-]{1,63}" placeholder="เช่น clap" required>
+            </label>
+            <label class="field">
+              <span data-i18n="gesture.upload.name">ชื่อไทย</span>
+              <input id="gesture-name-input" type="text" placeholder="เช่น ปรบมือ" required>
+            </label>
+            <label class="field">
+              <span data-i18n="gesture.upload.nameEn">ชื่ออังกฤษ (ไม่บังคับ)</span>
+              <input id="gesture-name-en-input" type="text" placeholder="e.g. Clap">
+            </label>
+            <label class="field">
+              <span data-i18n="gesture.upload.aliases">คำสั่งเสียง (คั่นด้วย ,)</span>
+              <input id="gesture-aliases-input" type="text" placeholder="เช่น ปรบมือ, clap">
+            </label>
+            <label class="switch">
+              <input type="checkbox" id="gesture-loop-input">
+              <span data-i18n="gesture.upload.loop">Loop (เล่นวนซ้ำ)</span>
+            </label>
+            <div class="row">
+              <button type="submit" data-i18n="gesture.upload.add">Add Gesture</button>
+            </div>
+          </form>
+          <p id="author-status" class="muted" role="status"></p>
+        </section>
+      </div>
+    </aside>
+
+    <div id="viewport" class="viewport">
+      <div id="labels" class="labels" aria-hidden="false"></div>
+      <div id="loading" class="loading" role="status" data-i18n="loading.map">กำลังโหลด Map…</div>
+    </div>
+
+    <div id="voice-bar" class="voice-bar" data-i18n-aria-label="voice">
+      <button id="mic" class="mic" aria-pressed="false" data-i18n-aria-label="mic.start">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12h-2Z"/></svg>
+      </button>
+      <div class="voice-text">
+        <div class="voice-head"><button id="lang" class="lang" type="button" data-i18n-title="lang.switch" data-i18n-aria-label="lang.switch">TH</button><span id="stt-badge" class="stt-badge" hidden></span><div id="voice-status" class="voice-status"></div></div>
+        <form id="command-form" class="command-form">
+          <input id="command-input" autocomplete="off" data-i18n-placeholder="voice.input" data-i18n-aria-label="voice.typeLabel">
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <dialog id="pin-card" class="pin-card">
+    <form method="dialog" class="pin-card-close"><button data-i18n-aria-label="pin.close">×</button></form>
+    <h2 id="pin-card-title"></h2>
+    <p class="muted" data-i18n="pin.say"></p>
+    <p id="pin-card-command" class="say"></p>
+    <p id="pin-card-alts" class="muted small"></p>
+    <div id="pin-card-author" class="author-fields" hidden>
+      <label class="field"><span data-i18n="pin.name"></span><input id="pin-name"></label>
+      <label class="field"><span data-i18n="pin.nameEn"></span><input id="pin-name-en"></label>
+      <label class="field"><span data-i18n="pin.aliases"></span><input id="pin-aliases"></label>
+      <div class="row"><button id="pin-face" class="secondary" type="button" data-i18n="pin.face"></button><button id="pin-delete" class="danger" type="button" data-i18n="pin.delete"></button></div>
+    </div>
+    <div class="row"><button id="pin-go" type="button" data-i18n="pin.go"></button></div>
+  </dialog>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

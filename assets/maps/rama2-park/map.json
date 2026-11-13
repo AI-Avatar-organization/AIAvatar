@@ -1,0 +1,295 @@
+{
+  "id": "rama2-park",
+  "name": "อุทยาน ร.2 อัมพวา",
+  "assets": [],
+  "navigation": {
+    "exclude": "roof|cloud|ceiling|detail|holder|icosphere"
+  },
+  "description": "โลก Low Poly ทั้งผืน: ภูมิทัศน์ แม่น้ำ ถนน ต้นไม้ และอาคารมรดก (Final Scene Rama2_Low)",
+  "scene": "scene.glb",
+  "unitScale": 1,
+  "version": 4,
+  "ground": [],
+  "groundPlane": false,
+  "spawn": {
+    "position": [
+      63.9,
+      0.15,
+      -227.4
+    ],
+    "facing": 0
+  },
+  "camera": null,
+  "stations": [
+    {
+      "id": "parking",
+      "name": "ลานจอดรถ",
+      "aliases": [
+        "ทางเข้า",
+        "จุดเริ่มต้น",
+        "parking",
+        "car park",
+        "start"
+      ],
+      "position": [
+        63.9,
+        0.15,
+        -227.4
+      ],
+      "facing": 0,
+      "description": "ลานจอดรถและทางเข้าอุทยานด้านใต้",
+      "nameEn": "Car Park"
+    },
+    {
+      "id": "puppet-house",
+      "name": "บ้านหุ่นละครเล็ก",
+      "aliases": [
+        "หุ่นละครเล็ก",
+        "โรงหุ่น",
+        "อาคารหุ่น",
+        "puppet house",
+        "puppets"
+      ],
+      "position": [
+        6,
+        0.14,
+        -174
+      ],
+      "facing": 3.142,
+      "description": "อาคารจัดแสดงหุ่นละครเล็กสองชั้น",
+      "nameEn": "Puppet House"
+    },
+    {
+      "id": "music-pavilion",
+      "name": "ศาลาดนตรี",
+      "aliases": [
+        "ศาลาดนตรีไทย",
+        "music pavilion",
+        "pavilion"
+      ],
+      "position": [
+        61.5,
+        4.54,
+        -90
+      ],
+      "facing": 3.142,
+      "description": "ศาลาดนตรีไทยบนเนิน",
+      "nameEn": "Music Pavilion"
+    },
+    {
+      "id": "south-pond",
+      "name": "สระน้ำ",
+      "aliases": [
+        "สระน้ำใกล้ศาลา",
+        "pond"
+      ],
+      "position": [
+        52.5,
+        0.96,
+        -104
+      ],
+      "facing": -2.839,
+      "description": "สระน้ำข้างศาลาดนตรี",
+      "nameEn": "Pond"
+    },
+    {
+      "id": "canal-houses",
+      "name": "หมู่เรือนไทยริมคลอง",
+      "aliases": [
+        "เรือนไทยริมคลอง",
+        "เรือนริมคลอง",
+        "thai houses",
+        "canal houses",
+        "canal-side thai houses"
+      ],
+      "position": [
+        30,
+        0.05,
+        -12
+      ],
+      "facing": 2.498,
+      "description": "หมู่เรือนไทยยกพื้นมีทางเดินเชื่อมริมคลอง",
+      "nameEn": "Canal-side Thai Houses"
+    },
+    {
+      "id": "rama2-entrance",
+      "name": "ทางขึ้นพิพิธภัณฑ์ ร.2",
+      "aliases": [
+        "พิพิธภัณฑ์ ร.2",
+        "พิพิธภัณฑ์รัชกาลที่ 2",
+        "พิพิธภัณฑ์",
+        "rama 2 museum",
+        "museum",
+        "rama ii museum stairs"
+      ],
+      "position": [
+        -30.58,
+        -0.26,
+        76
+      ],
+      "facing": 3.139,
+      "description": "บันไดทางขึ้นหมู่เรือนไทยพิพิธภัณฑ์ ร.2",
+      "nameEn": "Rama II Museum Stairs"
+    },
+    {
+      "id": "central-deck",
+      "name": "ชานกลางเรือน",
+      "aliases": [
+        "ชานเรือน",
+        "ชานกลาง",
+        "ชาน",
+        "courtyard",
+        "deck",
+        "central deck"
+      ],
+      "position": [
+        -30.56,
+        3.06,
+        56.25
+      ],
+      "facing": 3.138,
+      "description": "ชานโล่งกลางหมู่เรือน ร.2",
+      "nameEn": "Central Deck"
+    },
+    {
+      "id": "main-hall",
+      "name": "เรือนใหญ่",
+      "aliases": [
+        "เรือนประธาน",
+        "หอใหญ่",
+        "main hall",
+        "main house"
+      ],
+      "position": [
+        -30.5,
+        3.05,
+        35.25
+      ],
+      "facing": 3.142,
+      "description": "เรือนประธานของหมู่เรือน ร.2",
+      "nameEn": "Main Hall"
+    },
+    {
+      "id": "right-house",
+      "name": "เรือนด้านขวา",
+      "aliases": [
+        "เรือนขวา",
+        "ฝั่งขวา",
+        "right house",
+        "right-hand house"
+      ],
+      "position": [
+        -39,
+        3.07,
+        51.55
+      ],
+      "facing": -1.571,
+      "description": "หน้าเรือนบริวารฝั่งขวาเมื่อเดินเข้าจากบันได (ยืนบนชาน หันหน้าเข้าเรือน)",
+      "nameEn": "Right-hand House"
+    },
+    {
+      "id": "left-house",
+      "name": "เรือนด้านซ้าย",
+      "aliases": [
+        "เรือนซ้าย",
+        "ฝั่งซ้าย",
+        "left house",
+        "left-hand house"
+      ],
+      "position": [
+        -19.7,
+        3.14,
+        51.59
+      ],
+      "facing": 1.571,
+      "description": "หน้าเรือนบริวารฝั่งซ้ายเมื่อเดินเข้าจากบันได (ยืนบนชาน หันหน้าเข้าเรือน)",
+      "nameEn": "Left-hand House"
+    },
+    {
+      "id": "pond-bridge",
+      "name": "สะพานข้ามสระ",
+      "aliases": [
+        "สะพาน",
+        "bridge",
+        "pond bridge"
+      ],
+      "position": [
+        -23.3,
+        0.79,
+        115.7
+      ],
+      "facing": -2.352,
+      "description": "สะพานไม้ข้ามสระหน้าศาลาริมน้ำ",
+      "nameEn": "Pond Bridge"
+    },
+    {
+      "id": "pond-pavilion",
+      "name": "ศาลาริมสระ",
+      "aliases": [
+        "ศาลากลางน้ำ",
+        "ศาลาริมน้ำ",
+        "pond pavilion"
+      ],
+      "position": [
+        -36.5,
+        0.25,
+        108.1
+      ],
+      "facing": 2.554,
+      "description": "ศาลาเล็กสีทองในสระ (ยืนชมจากริมสระ)",
+      "nameEn": "Pond Pavilion"
+    },
+    {
+      "id": "north-end",
+      "name": "ปลายถนนด้านเหนือ",
+      "aliases": [
+        "ปลายถนน",
+        "สุดถนน",
+        "north end",
+        "north end of the road"
+      ],
+      "position": [
+        14,
+        0.14,
+        250
+      ],
+      "facing": 0,
+      "description": "ปลายถนนสายหลักด้านเหนือของอุทยาน",
+      "nameEn": "North End of the Road"
+    }
+  ],
+  "connectors": [
+    {
+      "id": "rama2-front-stairs",
+      "points": [
+        [
+          -36.8,
+          0.26,
+          63.8
+        ],
+        [
+          -33.2,
+          1.55,
+          63.8
+        ],
+        [
+          -30.55,
+          1.55,
+          63.8
+        ],
+        [
+          -30.55,
+          1.55,
+          62.6
+        ],
+        [
+          -30.55,
+          3,
+          58.3
+        ]
+      ]
+    }
+  ],
+  "nameEn": "King Rama II Park, Amphawa",
+  "descriptionEn": "One low-poly world: landscape, river, roads, trees and heritage buildings (Final Scene Rama2_Low)"
+}

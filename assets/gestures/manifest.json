@@ -1,0 +1,108 @@
+{
+  "locomotion": {
+    "idle": "idle",
+    "walk": "clips/walk.glb"
+  },
+  "gestures": [
+    {
+      "id": "wai",
+      "name": "ไหว้",
+      "nameEn": "Wai (Thai greeting)",
+      "aliases": [
+        "สวัสดี",
+        "ไหว้สวัสดี",
+        "wai",
+        "greet",
+        "say hello"
+      ],
+      "procedural": "wai",
+      "source": "procedural",
+      "prompt": "A person stands upright, brings both palms together in front of the chest with fingertips up, bows the head slightly, holds for one second, and then returns the hands to the sides."
+    },
+    {
+      "id": "wave",
+      "name": "โบกมือ",
+      "nameEn": "Wave",
+      "aliases": [
+        "โบก",
+        "ทักทาย",
+        "wave",
+        "wave hand",
+        "hello"
+      ],
+      "procedural": "wave",
+      "source": "procedural",
+      "prompt": "A person stands still, raises the right hand beside the head and waves it side to side three times, and then lowers the arm."
+    },
+    {
+      "id": "point",
+      "name": "ชี้",
+      "nameEn": "Point",
+      "aliases": [
+        "ชี้ให้ดู",
+        "ชี้ไปข้างหน้า",
+        "point",
+        "point ahead"
+      ],
+      "procedural": "point",
+      "source": "procedural",
+      "prompt": "A person stands still, extends the right arm straight forward at shoulder height and points with the index finger, holds for two seconds, and then lowers the arm."
+    },
+    {
+      "id": "bow",
+      "name": "โค้ง",
+      "nameEn": "Bow",
+      "aliases": [
+        "โค้งคำนับ",
+        "คำนับ",
+        "bow",
+        "take a bow"
+      ],
+      "procedural": "bow",
+      "source": "procedural",
+      "prompt": "A person stands with arms at the sides, bends forward at the waist about thirty degrees, holds for one second, and then stands upright again."
+    },
+    {
+      "id": "welcome",
+      "name": "ผายมือ",
+      "nameEn": "Welcome",
+      "aliases": [
+        "เชิญ",
+        "ต้อนรับ",
+        "ยินดีต้อนรับ",
+        "welcome",
+        "present"
+      ],
+      "procedural": "welcome",
+      "source": "procedural",
+      "prompt": "A person opens both arms outward and forward with palms up in a welcoming gesture, holds for one second, and then returns the arms to the sides."
+    },
+    {
+      "id": "sit",
+      "name": "นั่ง",
+      "nameEn": "Sit",
+      "aliases": [
+        "นั่งลง",
+        "นั่งพัก",
+        "sit",
+        "sit down"
+      ],
+      "file": "clips/sit.glb",
+      "loop": true,
+      "source": "mixamo"
+    },
+    {
+      "id": "dance",
+      "name": "เต้น",
+      "nameEn": "Dance",
+      "aliases": [
+        "เต้นรำ",
+        "เต้นหน่อย",
+        "dance"
+      ],
+      "file": "clips/dance.glb",
+      "loop": false,
+      "source": "mixamo"
+    }
+  ]
+}

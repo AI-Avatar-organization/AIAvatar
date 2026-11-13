@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: aiavatar
+  namespace: aiavatar
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/proxy-body-size: "25m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - ai.mangosgo.com
+      secretName: ai-mangosgo-com-tls
+  rules:
+    - host: ai.mangosgo.com
+      http:
+        paths:
+          - path: /aiavatar(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: aiavatar-web
+                port:
+                  number: 3300

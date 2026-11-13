@@ -1,0 +1,76 @@
+# AI Avatar 3D — four containers from two images (see ../README.md, section "วิธีรันแบบ Docker")
+#   web     web app + speech gateway (serves the 3D world, slots, ffmpeg) · only reachable through nginx
+#   stt-th  Thai STT Service (STT_WORKERS_TH workers)   stt-en  English STT Service (STT_WORKERS_EN workers)
+#   nginx   HTTPS in front of web: the browser only allows the microphone on HTTPS
+# Settings come from .env (copy .env.example). Start: docker compose up -d   Stop: docker compose down
+name: ai-avatar-3d
+
+x-app: &app
+  image: ai-avatar-3d:${IMAGE_TAG:-latest}
+  restart: unless-stopped
+  environment: &stt-env
+    STT_MODEL_TH: ${STT_MODEL_TH:-biodatlab/whisper-th-small-combined}
+    STT_MODEL_EN: ${STT_MODEL_EN:-openai/whisper-base.en}
+    STT_QUANTIZE: ${STT_QUANTIZE:-}
+  logging: &logging
+    driver: json-file
+    options: { max-size: "10m", max-file: "3" }
+
+services:
+  web:
+    <<: *app
+    environment:
+      STT_SERVICE_TH: http://stt-th:3401
+      STT_SERVICE_EN: http://stt-en:3402
+      SLOT_TTL_MS: ${SLOT_TTL_MS:-30000}
+    volumes:
+      - maps:/app/maps                 # Author-mode edits survive image updates
+      - gestures:/app/gestures
+    mem_limit: 512m
+    depends_on: [stt-th, stt-en]       # started, not healthy: the 3D world and typed commands work while models load
+
+  stt-th:
+    <<: *app
+    command: ["node", "server/stt-service.mjs"]
+    environment:
+      <<: *stt-env
+      STT_LANG: th
+      STT_PORT: "3401"
+      HOST: 0.0.0.0
+      STT_WORKERS: ${STT_WORKERS_TH:-3}
+    mem_limit: ${STT_MEM_TH:-5g}
+    healthcheck: &stt-health
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:'+process.env.STT_PORT+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 180s               # every worker loads its model at start
+
+  stt-en:
+    <<: *app
+    command: ["node", "server/stt-service.mjs"]
+    environment:
+      <<: *stt-env
+      STT_LANG: en
+      STT_PORT: "3402"
+      HOST: 0.0.0.0
+      STT_WORKERS: ${STT_WORKERS_EN:-2}
+    mem_limit: ${STT_MEM_EN:-2g}
+    healthcheck: *stt-health
+
+  nginx:
+    image: nginx:1.27.5-alpine
+    ports:
+      - "${HTTPS_PORT:-3443}:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro    # server.crt + server.key (gen-cert.sh makes a self-signed pair)
+    depends_on:
+      web: { condition: service_healthy }
+    mem_limit: 64m
+    restart: unless-stopped
+    logging: *logging
+
+volumes:
+  maps:
+  gestures:

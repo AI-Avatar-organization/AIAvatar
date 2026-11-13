@@ -1,0 +1,13 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ai-mangosgo-com
+  namespace: aiavatar
+spec:
+  secretName: ai-mangosgo-com-tls
+  dnsNames:
+    - ai.mangosgo.com
+  issuerRef:
+    name: letsencrypt-production-cloudflare-dns01
+    kind: ClusterIssuer
+    group: cert-manager.io

@@ -1,0 +1,6 @@
+# Python for the STT workers (backend/scripts/stt_worker.py). torch is installed separately:
+#   Docker / Linux CPU: pip install torch --index-url https://download.pytorch.org/whl/cpu
+#   macOS (MPS GPU):    pip install torch
+numpy
+transformers
+huggingface_hub

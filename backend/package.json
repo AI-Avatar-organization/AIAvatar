@@ -1,0 +1,21 @@
+{
+  "name": "ai-avatar-3d",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server/index.mjs",
+    "start:all": "node scripts/start-all.mjs"
+  },
+  "dependencies": {
+    "@recast-navigation/three": "0.43.1",
+    "recast-navigation": "0.43.1",
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.0"
+  }
+}
