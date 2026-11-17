@@ -133,6 +133,7 @@ backend ต้องออกเน็ตไป `https://api.mangosgo.com` ไ�
 | `MAPS_DIR`, `GESTURES_DIR` | maps/, gestures/ | โฟลเดอร์ข้อมูลที่แก้ได้ใน Author mode |
 | `HTTPS_PORT` | 3443 | พอร์ตของ nginx ใน compose |
 | `AUTHOR_ENABLED` | true | `false` = ปิด API แก้ Map / Gesture (ตอบ 403) ใช้กับเว็บสาธารณะ |
+| `RHUBARB_PATH` | /opt/rhubarb/rhubarb ใน Docker | โปรแกรม Rhubarb สำหรับขยับปาก (Dockerfile ติดตั้งให้ ต้อง build เป็น `linux/amd64`) นอก Docker ต้องติดตั้งเองและตั้งค่านี้ |
 | `MANGOS_AUTH` | on | `off` = ทุกคนเป็น Guest และซ่อนปุ่ม Login (ใช้เมื่อเว็บไม่ได้อยู่ใต้ `*.mangosgo.com`) |
 | `MANGOS_API_BASE` | https://api.mangosgo.com/api/v1 | MANGOs Auth ที่ backend ใช้ตรวจ cookie `accessToken` |
 | `MANGOS_LOGIN_URL` | https://mangosgo.com/login | หน้า Login ของ MANGOs (หน้าเว็บส่ง `?redirect=<หน้านี้>` ไปให้) |
