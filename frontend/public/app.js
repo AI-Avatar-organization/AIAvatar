@@ -1,11 +1,14 @@
 import * as THREE from 'three';
 import { World } from './world.js';
-import { Avatar } from './avatar.js';
+import { Avatar, AVATARS, DEFAULT_AVATAR } from './avatar.js';
 import { VoiceInput, BrowserSpeechInput, browserSpeechSupported, reserveSlot, releaseSlot } from './voice.js';
 import { loadGestureLibrary } from './gestures.js';
 import { convertMotion, isGlb } from './motion-convert.js';
-import { parseCommand, vocabularyFor } from '/aiavatar/shared/command.mjs';
-import { planRoute } from '/aiavatar/shared/route.mjs';
+import { speakWithLipSync } from './lipsync.js';
+import { parseCommand, vocabularyFor } from './shared/command.mjs';
+import { planRoute } from './shared/route.mjs';
+import { pageUrl } from './base.js';
+import { loadSession, features, login, logout, savedAvatar, saveAvatar } from './session.js';
 import { t, lang, setLang, onLangChange, applyI18n, nameOf } from './i18n.js';
 
 const $ = id => document.getElementById(id);
@@ -14,12 +17,12 @@ const authorMode = params.get('author') === '1';
 
 const world = new World($('viewport'));
 const labels = $('labels');
-const state = { map: null, avatar: null, pins: new Map(), queue: Promise.resolve(), editing: null, gestures: [] };
+const state = { session: null, map: null, avatar: null, pins: new Map(), queue: Promise.resolve(), editing: null, gestures: [] };
 window.__app = { world, state, runCommand }; // test and debugging hook
 
 // ---------- Map loading ----------
 async function listMaps() {
-  const { maps, errors } = await (await fetch('/aiavatar/api/maps')).json();
+  const { maps, errors } = await (await fetch(pageUrl('api/maps'))).json();
   if (errors.length) console.warn('Map package errors:', errors);
   const select = $('map-select');
   state.maps = maps;
@@ -37,7 +40,7 @@ function renderMapOptions() {
 async function openMap(id) {
   $('loading').hidden = false;
   $('loading').textContent = t('loading.map');
-  const response = await fetch(`/aiavatar/api/maps/${id}`);
+  const response = await fetch(pageUrl(`api/maps/${id}`));
   if (!response.ok) throw new Error((await response.json()).error);
   const map = await response.json();
   state.map = map;
@@ -190,7 +193,7 @@ async function reloadGestures() {
 async function editGesture(gesture) {
   const aliases = prompt(t('gesture.editPrompt', { name: nameOf(gesture) }), gesture.aliases.join(', '));
   if (aliases === null) return;
-  const response = await fetch(`/aiavatar/api/gestures/${gesture.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+  const response = await fetch(pageUrl(`api/gestures/${gesture.id}`), { method: 'PATCH', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ aliases: aliases.split(',').map(a => a.trim()).filter(Boolean) }) });
   const body = await response.json();
   if (!response.ok) return setStatus(body.error);
@@ -199,7 +202,7 @@ async function editGesture(gesture) {
 }
 async function deleteGesture(gesture) {
   if (!confirm(t('gesture.deleteConfirm', { name: nameOf(gesture) }))) return;
-  const response = await fetch(`/aiavatar/api/gestures/${gesture.id}`, { method: 'DELETE' });
+  const response = await fetch(pageUrl(`api/gestures/${gesture.id}`), { method: 'DELETE' });
   const body = await response.json();
   if (!response.ok) return setStatus(body.error);
   await reloadGestures();
@@ -500,7 +503,7 @@ if (authorMode) {
       }
       gestureStatus.textContent = t('gesture.upload.uploading');
       // Step 1: upload .glb file
-      const uploadRes = await fetch(`/aiavatar/api/gestures/clip?id=${encodeURIComponent(id)}`, {
+      const uploadRes = await fetch(pageUrl(`api/gestures/clip?id=${encodeURIComponent(id)}`), {
         method: 'POST',
         headers: { 'Content-Type': 'model/gltf-binary' },
         body
@@ -512,7 +515,7 @@ if (authorMode) {
         id, name, ...(nameEn ? { nameEn } : {}),
         aliases, file: `clips/${id}.glb`, loop, source: extension === 'bvh' ? 'quickmagic-video' : 'quickmagic-text'
       };
-      const metaRes = await fetch('/aiavatar/api/gestures', {
+      const metaRes = await fetch(pageUrl('api/gestures'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(gestureData)
@@ -584,28 +587,155 @@ if (authorMode) {
   });
   $('save-map').addEventListener('click', async () => {
     state.map.camera = { position: world.camera.position.toArray().map(round), target: world.controls.target.toArray().map(round) };
-    const response = await fetch(`/aiavatar/api/maps/${state.map.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(mapJson()) });
+    const response = await fetch(pageUrl(`api/maps/${state.map.id}`), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(mapJson()) });
     const body = await response.json();
     $('author-status').textContent = response.ok ? t('author.saved', { version: body.version }) : body.error;
     if (response.ok) state.map.version = body.version;
   });
 }
 
+// ---------- Avatar: Guest gets the default, a Member picks (ADR 0011) ----------
+let avatarHooks = [];
+
+/** Wire an Avatar into the world and the UI; returns undo functions so a swap can unhook the previous one. */
+function attachAvatar(avatar) {
+  state.avatar = avatar;
+  avatar.groundAt = (...args) => world.groundAt(...args);
+  const update = dt => avatar.update(dt);
+  world.updaters.add(update);
+  const hooks = [() => world.updaters.delete(update)];
+  // Lip-sync demo (Companion pipeline): a Thai sample → /api/lipsync → Viseme morphs on the audio clock.
+  $('lipsync-demo').hidden = !avatar.lipSync;
+  if (avatar.lipSync) {
+    // Like Companion's canvas.dataset.mouthShape: lets tests and people see what the mouth is doing.
+    const mouth = () => {
+      $('viewport').dataset.mouthShape = avatar.lipSync.shape;
+      $('viewport').dataset.mouthOpen = Math.max(0, ...Object.values(avatar.lipSync.current)).toFixed(3);
+    };
+    world.updaters.add(mouth);
+    hooks.push(() => world.updaters.delete(mouth));
+  }
+  hooks.push(avatar.onChange(event => { if (event.type === 'walk-start') renderGestureActive(null); }));
+  avatarHooks = hooks;
+}
+
+async function loadGesturesFor(avatar) {
+  try {
+    state.gestures = await loadGestureLibrary(avatar);
+  } catch (error) {
+    state.gestures = [];
+    console.warn('Gesture Library unavailable, using procedural idle/walk:', error);
+  }
+  renderGestures();
+}
+
+/** Free the GPU memory of an Avatar that left the scene (VRM textures are several MB). */
+function disposeAvatar(avatar) {
+  avatar.mixer.stopAllAction();
+  avatar.mixer.uncacheRoot(avatar.root);
+  avatar.root.traverse(object => {
+    object.geometry?.dispose?.();
+    for (const material of [object.material].flat().filter(Boolean)) {
+      for (const value of Object.values(material)) if (value?.isTexture) value.dispose();
+      material.dispose();
+    }
+  });
+}
+
+/** Replace the Avatar in place: same spot and facing, Gesture Library rebuilt for the new skeleton. */
+async function swapAvatar(id) {
+  const old = state.avatar;
+  if (!old || !AVATARS[id] || old.id === id) return; // nothing to swap before the first Avatar is in the scene
+  const select = $('avatar-select');
+  select.disabled = true;
+  setStatus(t('avatar.loading'));
+  try {
+    const next = await Avatar.load(id);
+    old.cancel();
+    old.stopGesture();
+    avatarHooks.forEach(undo => undo());
+    world.scene.remove(old.root);
+    disposeAvatar(old);
+    attachAvatar(next);
+    world.scene.add(next.root);
+    next.place(old.root.position.toArray(), old.root.rotation.y);
+    next.root.position.y = old.root.position.y;
+    world.followObject(next.root); // camera and roof fading move to the new Avatar
+    await loadGesturesFor(next);
+    saveAvatar(state.session, id);
+    setStatus(t('voice.idle', { example: t('example') }));
+  } catch (error) {
+    select.value = old.id;
+    setStatus(t('avatar.failed', { error: error.message }));
+    console.error(error);
+  } finally {
+    select.disabled = false;
+  }
+}
+
+function renderAvatarOptions() {
+  const select = $('avatar-select');
+  const value = select.value || state.avatar?.id;
+  select.replaceChildren(...Object.entries(AVATARS).map(([id, entry]) => new Option(nameOf(entry), id)));
+  if (value) select.value = value;
+}
+
+// ---------- Guest / Member ----------
+function renderSession() {
+  const session = state.session;
+  const member = session.member;
+  const can = features(session);
+  $('session').dataset.mode = session.mode;
+  $('session-name').textContent = member ? member.displayName : t('session.guest');
+  $('session-name').title = member ? member.displayName : '';
+  $('session-image').hidden = !member?.avatarImageUrl;
+  if (member?.avatarImageUrl) $('session-image').src = member.avatarImageUrl;
+  // A server without MANGOs (MANGOS_AUTH=off) shows no login button at all.
+  $('session-login').hidden = Boolean(member) || !session.enabled;
+  $('session-logout').hidden = !member;
+  $('avatar-picker').hidden = !can.avatarPicker;
+  $('avatar-member-only').hidden = can.avatarPicker || !session.enabled;
+  $('avatar-section').hidden = !can.avatarPicker && !session.enabled;
+  if (session.error) setStatus(t('session.unavailable'));
+}
+
+$('session-login').addEventListener('click', () => login(state.session));
+$('session-logout').addEventListener('click', () => logout(state.session, { onFallback: () => setStatus(t('session.logoutElsewhere')) }));
+$('avatar-select').addEventListener('change', event => swapAvatar(event.target.value));
+$('lipsync-demo').addEventListener('click', async () => {
+  const demo = $('lipsync-demo');
+  if (!state.avatar?.lipSync) return;
+  demo.disabled = true;
+  try { console.info('lip-sync timings', (await speakWithLipSync(state.avatar.lipSync, pageUrl('samples/lipsync-demo-th.wav'))).timings); }
+  catch (error) { console.warn('lip-sync failed', error); }
+  finally { demo.disabled = false; }
+});
+onLangChange(() => { renderAvatarOptions(); if (state.session) renderSession(); });
+
+/** Which Avatar to open with: a Member's last pick; ?avatar= only in Author mode (testing); otherwise the default. */
+function firstAvatar(session) {
+  const wanted = features(session).avatarPicker ? savedAvatar(session) : authorMode ? params.get('avatar') : null;
+  return AVATARS[wanted] ? wanted : DEFAULT_AVATAR;
+}
+
 // ---------- Boot ----------
 applyI18n();
 renderLanguage();
 try {
-  $('loading').textContent = t('loading.avatar');
-  const [maps, avatar] = await Promise.all([listMaps(), Avatar.load()]);
-  state.avatar = avatar;
-  avatar.groundAt = (...args) => world.groundAt(...args);
-  world.updaters.add(dt => avatar.update(dt));
-  avatar.onChange(event => { if (event.type === 'walk-start') renderGestureActive(null); });
-  try {
-    $('loading').textContent = t('loading.gestures');
-    state.gestures = await loadGestureLibrary(avatar);
-    renderGestures();
-  } catch (error) { console.warn('Gesture Library unavailable, using procedural idle/walk:', error); }
+  const sessionReady = loadSession();
+  const [maps, avatar] = await Promise.all([
+    listMaps(),
+    sessionReady.then(session => {
+      state.session = session;
+      renderSession();
+      $('loading').textContent = t('loading.avatar');
+      return Avatar.load(firstAvatar(session));
+    })
+  ]);
+  attachAvatar(avatar);
+  renderAvatarOptions();
+  $('loading').textContent = t('loading.gestures');
+  await loadGesturesFor(avatar);
   const wanted = params.get('map');
   const first = maps.find(m => m.id === wanted) ?? maps.find(m => m.stationCount) ?? maps[0];
   if (!first) throw new Error(t('maps.none'));

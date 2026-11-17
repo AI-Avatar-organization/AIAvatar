@@ -44,6 +44,7 @@ COPY --chown=node:node frontend/shared ./shared
 COPY --chown=node:node assets/models ./assets
 COPY --chown=node:node assets/maps ./maps
 COPY --chown=node:node assets/gestures ./gestures
+# Compile walking paths once (checks every Station is reachable); the page downloads them instead of building a navmesh.
 RUN node scripts/build-navigation.mjs
 
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=3300 WHISPER_PYTHON=/opt/venv/bin/python STT_DEVICE=cpu

@@ -56,6 +56,18 @@ Avatar แบบ Avaturn T2 ที่มี ARKit blendshapes + Visemes จึ�
 **Author**:
 ทีมงานที่เปิด Author mode (`?author=1`) แก้ Map และนำเข้า Motion File ผู้ชมทั่วไปนำเข้าไม่ได้
 
+**Guest**:
+Visitor ที่ยังไม่ได้เข้าสู่ระบบ MANGOs ใช้ทุกอย่างของการชมสถานที่ได้ แต่ใช้ Avatar เริ่มต้นเท่านั้น
+_Avoid_: Anonymous, ผู้ใช้ไม่ระบุตัว
+
+**Member**:
+Visitor ที่มี MANGOs Session ได้ฟีเจอร์ของสมาชิก เช่น เปลี่ยน Avatar และ Multiplayer ในอนาคต ระบุตัวด้วยรหัสผู้ใช้ MANGOs ไม่ใช่อีเมล
+_Avoid_: User, Account
+
+**MANGOs Session**:
+การเข้าสู่ระบบ MANGOs ครั้งเดียวที่ใช้ได้กับทุกเว็บใต้ mangosgo.com แอปนี้ไม่มีการเข้าสู่ระบบของตัวเอง
+_Avoid_: Login ของแอป, App session
+
 **Recording**:
 ไฟล์ที่ Replay ใช้เล่น เก็บ Event Timeline ของ Avatar และเสียงพูดพร้อมคำบรรยาย ผูกกับ Map
 

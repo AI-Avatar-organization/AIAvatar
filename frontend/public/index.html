@@ -4,18 +4,24 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AI Avatar 3D</title>
+  <script>
+    // Behind a path prefix (https://ai.mangosgo.com/aiavatar) every URL below is relative to the page folder,
+    // so the folder needs its trailing slash before anything loads.
+    if (!location.pathname.endsWith('/') && !/\.[a-z0-9]+$/i.test(location.pathname))
+      location.replace(location.pathname + '/' + location.search + location.hash);
+  </script>
   <link rel="icon" href="data:,">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/aiavatar/v/20261113-5/styles.css">
+  <link rel="stylesheet" href="styles.css">
   <script type="importmap">
     { "imports": {
-      "three": "/aiavatar/vendor/three/build/three.module.js",
-      "three/addons/": "/aiavatar/vendor/three/examples/jsm/",
-      "@recast-navigation/core": "/aiavatar/vendor/recast/core/dist/index.mjs",
-      "@recast-navigation/generators": "/aiavatar/vendor/recast/generators/dist/index.mjs",
-      "@recast-navigation/wasm": "/aiavatar/vendor/recast/wasm/dist/recast-navigation.wasm-compat.js",
-      "@recast-navigation/three": "/aiavatar/vendor/recast/three/dist/index.mjs"
+      "three": "./vendor/three/build/three.module.js",
+      "three/addons/": "./vendor/three/examples/jsm/",
+      "@recast-navigation/core": "./vendor/recast/core/dist/index.mjs",
+      "@recast-navigation/generators": "./vendor/recast/generators/dist/index.mjs",
+      "@recast-navigation/wasm": "./vendor/recast/wasm/dist/recast-navigation.wasm-compat.js",
+      "@recast-navigation/three": "./vendor/recast/three/dist/index.mjs"
     } }
   </script>
 </head>
@@ -28,6 +34,12 @@
     </label>
     <h1 id="map-title" data-i18n="loading">กำลังโหลด…</h1>
     <span id="mode-badge" class="badge" hidden data-i18n="author.mode">Author mode</span>
+    <div id="session" class="session" data-mode="guest">
+      <span id="session-name" class="session-name muted"></span>
+      <img id="session-image" class="session-image" alt="" hidden>
+      <button id="session-login" type="button" class="secondary" data-i18n="session.login" hidden>เข้าสู่ระบบด้วย MANGOs</button>
+      <button id="session-logout" type="button" class="secondary" data-i18n="session.logout" hidden>ออกจากระบบ</button>
+    </div>
     <div class="lang-switch" role="group" aria-label="Language / ภาษา">
       <button type="button" data-lang="th" aria-pressed="true">ไทย</button>
       <button type="button" data-lang="en" aria-pressed="false">EN</button>
@@ -39,6 +51,14 @@
       <button id="panel-toggle" class="panel-toggle" data-i18n-aria-label="panel.toggle" aria-expanded="true">‹</button>
       <div class="panel-body">
         <p id="map-description" class="muted"></p>
+        <section id="avatar-section">
+          <h2 data-i18n="avatar.pick">Avatar</h2>
+          <label class="field" id="avatar-picker" hidden>
+            <span class="visually-hidden" data-i18n="avatar.pick">Avatar</span>
+            <select id="avatar-select" data-i18n-aria-label="avatar.pick"></select>
+          </label>
+          <p id="avatar-member-only" class="muted small" data-i18n="avatar.memberOnly" hidden>เข้าสู่ระบบ MANGOs เพื่อเปลี่ยน Avatar</p>
+        </section>
         <section>
           <h2 data-i18n="show">แสดงในฉาก</h2>
           <label class="switch"><input type="checkbox" id="toggle-pins" checked><span data-i18n="show.pins">ชื่อ Pin</span></label>
@@ -48,6 +68,7 @@
         <section>
           <h2 data-i18n="gestures">ท่าทาง</h2>
           <div id="gesture-list" class="gesture-list"></div>
+          <button id="lipsync-demo" class="secondary" type="button" hidden>🗣 ทดสอบขยับปาก</button>
         </section>
         <section>
           <h2 id="stations-heading">Station</h2>
@@ -132,6 +153,6 @@
     <div class="row"><button id="pin-go" type="button" data-i18n="pin.go"></button></div>
   </dialog>
 
-  <script type="module" src="/aiavatar/v/20261113-5/app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>

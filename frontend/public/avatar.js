@@ -1,13 +1,40 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
+import { LipSync } from './lipsync.js';
 import { loadGlb } from './asset-loader.js';
+import { pageUrl } from './base.js';
+
+/**
+ * Avatars a Member can pick (ADR 0011; Guests always get the default, the first entry).
+ * VRM 0.x faces -Z, so it is turned to face +Z like the Avaturn GLB.
+ */
+export const AVATARS = {
+  avaturn: { url: 'assets/avatar.glb', name: 'Avaturn', nameEn: 'Avaturn' },
+  coolbanana: { url: 'assets/avatars/coolbanana/coolbanana.vrm', turn: Math.PI, name: 'CoolBanana', nameEn: 'CoolBanana' }
+};
+export const DEFAULT_AVATAR = Object.keys(AVATARS)[0];
 
 const WALK_SPEED = 1.35;       // m/s
 const MAX_TRIP_SECONDS = 15;   // long trips speed up so a walk across the whole Map stays short
 const MAX_SPEED = 12;          // m/s
 const TURN_SPEED = 6;          // rad/s
 const ARRIVE = 0.08;           // m
+
+/**
+ * GLTFLoader names morph targets only from mesh.extras.targetNames; VRM exporters (and some others) put the names
+ * on primitive.extras instead, which would leave Viseme morphs named "0", "1"… Fill the dictionary from there.
+ */
+function nameMorphsFromPrimitives(gltf) {
+  const json = gltf.parser.json;
+  gltf.scene.traverse(object => {
+    if (!object.morphTargetInfluences) return;
+    const where = gltf.parser.associations.get(object);
+    const mesh = json.meshes?.[where?.meshes];
+    const names = mesh?.extras?.targetNames ?? mesh?.primitives?.[where?.primitives ?? 0]?.extras?.targetNames;
+    if (names?.length === object.morphTargetInfluences.length) object.morphTargetDictionary = Object.fromEntries(names.map((name, i) => [name, i]));
+  });
+}
 
 const angleTo = (from, to) => Math.atan2(Math.sin(to - from), Math.cos(to - from));
 
@@ -17,9 +44,15 @@ const angleTo = (from, to) => Math.atan2(Math.sin(to - from), Math.cos(to - from
  * Before the Gesture Library loads, a procedural idle/walk pose keeps the Avatar out of its T-pose.
  */
 export class Avatar {
-  static async load(url = '/aiavatar/assets/avatar.glb') {
-    const gltf = await loadGlb(new GLTFLoader(), url);
-    return new Avatar(clone(gltf.scene), gltf.animations);
+  static async load(id = DEFAULT_AVATAR) {
+    const entry = AVATARS[id] ?? AVATARS[DEFAULT_AVATAR];
+    const gltf = await loadGlb(new GLTFLoader(), pageUrl(entry.url));
+    nameMorphsFromPrimitives(gltf);
+    const model = clone(gltf.scene);
+    if (entry.turn) model.rotation.y = entry.turn;
+    const avatar = new Avatar(model, gltf.animations);
+    avatar.id = AVATARS[id] ? id : DEFAULT_AVATAR;
+    return avatar;
   }
 
   constructor(root, animations = []) {
@@ -31,7 +64,8 @@ export class Avatar {
     this.mixer = new THREE.AnimationMixer(root);
     this.bones = {};
     root.traverse(object => {
-      if (object.isBone) this.bones[object.name.replace(/^mixamorig:?/, '')] = object;
+      // Gesture clips address bones by bare Mixamo names; rename prefixed bones (mixamorig:Hips → Hips) on this clone.
+      if (object.isBone) { object.name = object.name.replace(/^mixamorig:?/, ''); this.bones[object.name] = object; }
       if (object.isMesh) { object.castShadow = true; object.frustumCulled = false; }
     });
     this.rest = Object.fromEntries(Object.entries(this.bones).map(([name, bone]) => [name, bone.quaternion.clone()]));
@@ -43,6 +77,7 @@ export class Avatar {
     this.target = null;
     this.groundAt = null;
     this.listeners = new Set();
+    this.lipSync = LipSync.for(root); // null when the Avatar has no Viseme morphs (Gesture only)
     this.height = new THREE.Box3().setFromObject(root).getSize(new THREE.Vector3()).y || 1.75;
     this.actions = null;
     this.gesture = null;      // { id, action, loop, resolve }
@@ -143,6 +178,7 @@ export class Avatar {
   update(dt) {
     this.time += dt;
     this.mixer.update(dt);
+    this.lipSync?.update(dt);
     // Locomotion in ≤ 50 ms steps so low frame rates cannot overshoot waypoints.
     for (let left = dt; left > 1e-6; left -= 0.05) this.#move(Math.min(0.05, left));
     if (this.actions) this.#blend(dt); else this.#pose();

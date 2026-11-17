@@ -107,12 +107,14 @@ button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px s
   .panel { width: min(300px, 86vw); }
   .panel:not(.collapsed) ~ .voice-bar { left: 16px; width: calc(100% - 32px); }
   .topbar { gap: 10px; }
+  .session-name { display: none; }
+  .session button { padding: 4px 10px; font-size: .8rem; }
 }
 
 .voice-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .lang { flex: none; padding: 2px 8px; font-size: .75rem; border-radius: 6px; background: rgba(255,255,255,.14); color: #fff; }
 
-.lang-switch { margin-left: auto; display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 2px; background: var(--bg); flex: none; }
+.lang-switch { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 2px; background: var(--bg); flex: none; }
 .lang-switch button { background: transparent; color: var(--muted); padding: 4px 12px; border-radius: 999px; font-size: .85rem; }
 .lang-switch button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
 
@@ -124,3 +126,14 @@ button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px s
 .gesture-item { display: inline-flex; align-items: center; gap: 2px; }
 .gesture-list button.icon { padding: 4px 6px; border-radius: 8px; font-size: .8rem; background: transparent; border: 1px solid transparent; }
 .gesture-list button.icon:hover { border-color: var(--line); background: var(--bg); }
+
+/* Guest / Member (ADR 0011) */
+.session { margin-left: auto; display: flex; align-items: center; gap: 8px; min-width: 0; flex: none; }
+.session-name { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .85rem; }
+.session[data-mode="member"] .session-name { color: var(--ink); }
+.session-image { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1px solid var(--line); }
+.session button { padding: 5px 12px; font-size: .85rem; white-space: nowrap; }
+#avatar-select { padding: 7px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+
+/* hidden always wins over display rules such as .field { display: flex } */
+[hidden] { display: none !important; }

@@ -6,15 +6,18 @@ import { fileURLToPath } from 'node:url';
 import { loadRegistry, saveMap } from './maps.mjs';
 import { loadGestures, upsertGesture, saveClip, patchGesture, deleteGesture } from './gestures.mjs';
 import { createSpeechGateway } from './stt.mjs';
+import { createLipSync } from './lipsync.mjs';
 import { withPrebuiltNavigation } from './navigation.mjs';
+import { createMangosAuth } from './auth.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const mapsDir = process.env.MAPS_DIR ?? join(root, 'maps');
 const gesturesDir = process.env.GESTURES_DIR ?? join(root, 'gestures');
-const navigationDir = join(root, 'navigation');
+const navigationDir = join(root, 'navigation'); // compiled walking paths, written by scripts/build-navigation.mjs
 const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.glb': 'model/gltf-binary', '.svg': 'image/svg+xml',
-  '.md': 'text/markdown; charset=utf-8', '.png': 'image/png', '.jpg': 'image/jpeg' };
+  '.md': 'text/markdown; charset=utf-8', '.png': 'image/png', '.jpg': 'image/jpeg',
+  '.vrm': 'model/gltf-binary', '.wav': 'audio/wav' };
 
 /** Static mounts: URL prefix → directory. Paths are confined to each directory. */
 const mounts = [
@@ -33,6 +36,11 @@ const json = (response, status, body) => {
   response.end(JSON.stringify(body));
 };
 
+/**
+ * Every file carries an ETag. Code and JSON are revalidated on each load (no-cache → 304 when unchanged); models too,
+ * through public/asset-loader.js; compiled walking paths are named by content, so they never change.
+ * /v/<release>/… is accepted as an alias of /… so a deployment can cache-bust URLs if it wants to.
+ */
 async function serveFile(request, response, pathname) {
   pathname = pathname.replace(/^\/v\/[a-zA-Z0-9][a-zA-Z0-9._-]*\//, '/');
   for (const [prefix, dir] of mounts) {
@@ -44,17 +52,17 @@ async function serveFile(request, response, pathname) {
       const info = await stat(file);
       if (!info.isFile()) continue;
       const extension = extname(file);
-      const revalidate = ['.html', '.css', '.js', '.mjs', '.json'].includes(extension);
-      const etag = 'W/"' + info.size.toString(16) + '-' + Math.trunc(info.mtimeMs).toString(16) + '"';
+      const etag = `W/"${info.size.toString(16)}-${Math.trunc(info.mtimeMs).toString(16)}"`;
       const headers = {
         'Content-Type': types[extension] ?? 'application/octet-stream',
         'ETag': etag,
-        'Cache-Control': revalidate ? 'no-cache'
-          : pathname.startsWith('/navigation/') ? 'public, max-age=31536000, immutable'
+        'Cache-Control': ['.html', '.css', '.js', '.mjs', '.json'].includes(extension) ? 'no-cache'
+          : prefix === '/navigation/' ? 'public, max-age=31536000, immutable'
           : 'public, max-age=0, must-revalidate'
       };
-      const candidates = String(request.headers['if-none-match'] ?? '').split(',').map(value => value.trim());
-      if (candidates.some(value => value === '*' || value.replace(/^W\//, '') === etag.replace(/^W\//, ''))) {
+      const strip = value => value.trim().replace(/^W\//, '');
+      const candidates = String(request.headers['if-none-match'] ?? '').split(',').map(strip);
+      if (candidates.some(value => value === '*' || value === strip(etag))) {
         response.writeHead(304, headers);
         response.end();
         return true;
@@ -78,16 +86,30 @@ async function readBody(request, limit) {
   return Buffer.concat(chunks);
 }
 
-export function createApp({ speech = createSpeechGateway() } = {}) {
+/** Author API = the requests that change Maps or the Gesture Library. A public deployment sets AUTHOR_ENABLED=false. */
+const isAuthorWrite = (method, pathname) =>
+  (method === 'PUT' && pathname.startsWith('/api/maps/')) ||
+  (['POST', 'PATCH', 'DELETE'].includes(method) && (pathname === '/api/gestures' || pathname.startsWith('/api/gestures/')));
+
+export function createApp({
+  speech = createSpeechGateway(),
+  lipSync = createLipSync(),
+  auth = createMangosAuth(),
+  authorEnabled = process.env.AUTHOR_ENABLED !== 'false'
+} = {}) {
   return createServer(async (request, response) => {
     const { pathname, searchParams } = new URL(request.url, 'http://localhost');
-    // manual-ntserver02: public deployment write guard
-    if (process.env.AUTHOR_ENABLED === 'false' && (
-      (request.method === 'PUT' && pathname.startsWith('/api/maps/')) ||
-      (['POST', 'PATCH', 'DELETE'].includes(request.method) &&
-        (pathname === '/api/gestures' || pathname.startsWith('/api/gestures/')))
-    )) return json(response, 403, { error: 'Author API is disabled on this public deployment' });
     try {
+      if (!authorEnabled && isAuthorWrite(request.method, pathname)) return json(response, 403, { error: 'เว็บสาธารณะนี้ปิดการแก้ Map และท่าทาง (AUTHOR_ENABLED=false)' });
+      // Guest or Member (ADR 0011). 401 is the normal Guest answer; every answer says where to log in and out.
+      if (pathname === '/api/auth/me' && request.method === 'GET') {
+        const links = { enabled: auth.enabled, loginUrl: auth.loginUrl, logoutUrl: auth.logoutUrl };
+        let member = null;
+        let failure = null;
+        try { member = await auth.memberFrom(request); } catch (error) { failure = error; }
+        if (member) return json(response, 200, { mode: 'member', member, ...links });
+        return json(response, failure ? failure.status ?? 503 : 401, { mode: 'guest', member: null, ...links, ...(failure ? { error: failure.message } : {}) });
+      }
       if (pathname === '/api/maps' && request.method === 'GET') {
         const { maps, errors } = await loadRegistry(mapsDir);
         return json(response, 200, { maps: [...maps.values()].map(({ id, name, nameEn, description, descriptionEn, stations }) => ({ id, name, nameEn, description, descriptionEn, stationCount: stations.length })), errors });
@@ -111,6 +133,14 @@ export function createApp({ speech = createSpeechGateway() } = {}) {
         if (!audio.length) return json(response, 400, { error: 'ไม่มีข้อมูลเสียง' });
         const result = await speech.transcribe(audio, { language: searchParams.get('lang') ?? 'th', prompt: searchParams.get('prompt') ?? '', token: searchParams.get('token') ?? '' });
         return json(response, 200, { ...result, timings: { receiveMs, ...result.timings, serverMs: Math.round(performance.now() - started) } });
+      }
+      // Lip-sync: audio → Rhubarb mouth cues on that audio's clock (Companion pipeline). timings for the benchmark.
+      if (pathname === '/api/lipsync' && request.method === 'POST') {
+        const started = performance.now();
+        const audio = await readBody(request, 8 * 1024 * 1024);
+        if (!audio.length) return json(response, 400, { error: 'ไม่มีข้อมูลเสียง' });
+        const result = await lipSync.analyse(audio);
+        return json(response, 200, { ...result, timings: { ...result.timings, serverMs: Math.round(performance.now() - started) } });
       }
       // Reserve a slot when the mic is pressed: { token, expiresInMs } or 503 { busy } at once (ADR 0009).
       if (pathname === '/api/stt/reserve' && request.method === 'POST') return json(response, 200, await speech.reserve(searchParams.get('lang') ?? 'th'));

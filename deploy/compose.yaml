@@ -23,6 +23,10 @@ services:
       STT_SERVICE_TH: http://stt-th:3401
       STT_SERVICE_EN: http://stt-en:3402
       SLOT_TTL_MS: ${SLOT_TTL_MS:-30000}
+      AUTHOR_ENABLED: ${AUTHOR_ENABLED:-true}
+      MANGOS_AUTH: ${MANGOS_AUTH:-on}
+      MANGOS_API_BASE: ${MANGOS_API_BASE:-https://api.mangosgo.com/api/v1}
+      MANGOS_LOGIN_URL: ${MANGOS_LOGIN_URL:-https://mangosgo.com/login}
     volumes:
       - maps:/app/maps                 # Author-mode edits survive image updates
       - gestures:/app/gestures

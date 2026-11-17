@@ -8,6 +8,7 @@ let ready;
  * Agent size matches the Avatar (≈1.8 m tall, 0.25 m radius) and climbs normal stair steps (≤ 0.45 m).
  */
 export class Navigation {
+  /** Walking paths compiled at build time by scripts/build-navigation.mjs (server/navigation.mjs checks they match the Map). */
   static async load(url) {
     const started = performance.now();
     ready ??= init();

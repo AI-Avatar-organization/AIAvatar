@@ -4,8 +4,13 @@
  */
 const strings = {
   th: {
-    'loading.avatar': 'กำลังโหลดตัวละคร…', 'loading.gestures': 'กำลังเตรียมท่าทาง…',
+    'loading.avatar': 'กำลังโหลด Avatar…', 'loading.gestures': 'กำลังเตรียมท่าทาง…',
     'loading.model': 'กำลังโหลดสถานที่ 3D…', 'loading.navigation': 'กำลังเตรียมเส้นทางเดิน…',
+    'session.guest': 'Guest', 'session.login': 'เข้าสู่ระบบด้วย MANGOs', 'session.logout': 'ออกจากระบบ',
+    'session.unavailable': 'ระบบสมาชิก MANGOs ไม่ตอบ ใช้งานแบบ Guest ไปก่อน',
+    'session.logoutElsewhere': 'ออกจากระบบจากหน้านี้ไม่ได้ กำลังพาไปออกจากระบบที่ MANGOs…',
+    'avatar.pick': 'Avatar', 'avatar.memberOnly': 'เข้าสู่ระบบ MANGOs เพื่อเปลี่ยน Avatar', 'avatar.loading': 'กำลังเปลี่ยน Avatar…',
+    'avatar.failed': 'เปลี่ยน Avatar ไม่สำเร็จ: {error}',
     'lang.name': 'ไทย', 'lang.switch': 'Switch to English', 'map.pick': 'เลือก Map', 'loading': 'กำลังโหลด…',
     'loading.map': 'กำลังโหลด Map…', 'loading.failed': 'โหลดไม่สำเร็จ: {error}', 'maps.none': 'ยังไม่มี Map ในโฟลเดอร์ maps/',
     'panel': 'แผงควบคุม', 'panel.toggle': 'พับแผง', 'show': 'แสดงในฉาก', 'show.pins': 'ชื่อ Pin', 'show.avatar': 'ชื่อ Avatar',
@@ -55,6 +60,11 @@ const strings = {
   en: {
     'loading.avatar': 'Loading avatar…', 'loading.gestures': 'Preparing gestures…',
     'loading.model': 'Loading the 3D location…', 'loading.navigation': 'Preparing walking paths…',
+    'session.guest': 'Guest', 'session.login': 'Log in with MANGOs', 'session.logout': 'Log out',
+    'session.unavailable': 'MANGOs login is not responding; you can keep exploring as a Guest',
+    'session.logoutElsewhere': 'Could not log out from here; taking you to MANGOs to log out…',
+    'avatar.pick': 'Avatar', 'avatar.memberOnly': 'Log in with MANGOs to change your Avatar', 'avatar.loading': 'Changing Avatar…',
+    'avatar.failed': 'Could not change Avatar: {error}',
     'lang.name': 'English', 'lang.switch': 'เปลี่ยนเป็นภาษาไทย', 'map.pick': 'Choose a Map', 'loading': 'Loading…',
     'loading.map': 'Loading Map…', 'loading.failed': 'Could not load: {error}', 'maps.none': 'No Map in the maps/ folder yet',
     'panel': 'Control panel', 'panel.toggle': 'Collapse panel', 'show': 'Show in the scene', 'show.pins': 'Pin names',
