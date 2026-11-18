@@ -113,10 +113,10 @@ handoff/deploy/run-native.sh                                  # เปิด web
 ส่วน `AUTHOR_ENABLED`, ETag/304, `/v/<release>/` และ Navmesh สำเร็จรูป (`RUN node scripts/build-navigation.mjs` ใน Dockerfile) อยู่ในโค้ดแล้ว
 ไฟล์ k3s ของ ntserver02 อยู่ใน `deploy/k3s-ntserver02/` (`app.yaml` เพิ่ม env `MANGOS_*` แล้ว)
 
-## Login ด้วย MANGOs (Guest / Member, ADR 0011)
+## Login ด้วย MANGOs (Guest / Member, ADR 0016)
 
 เว็บเปิดเป็น Guest เสมอ ถ้า Visitor Login MANGOs ไว้แล้ว (cookie `accessToken` ของ `.mangosgo.com`) หน้าเว็บจะเป็น Member เอง
-Member เปลี่ยน Avatar ได้ ใช้ได้เฉพาะเมื่อเว็บอยู่ใต้ `*.mangosgo.com` ถ้าอยู่ที่อื่นให้ตั้ง `MANGOS_AUTH=off` (หรือเปลี่ยนไปใช้ OAuth ภายหลัง)
+ทุกคนเลือก Avatar ของระบบได้ Member จะได้ใช้ Avatar จากคลัง MANGOs ของตัวเอง (กำลังทำ) Login ใช้ได้เฉพาะเมื่อเว็บอยู่ใต้ `*.mangosgo.com` ถ้าอยู่ที่อื่นให้ตั้ง `MANGOS_AUTH=off` (หรือเปลี่ยนไปใช้ OAuth ภายหลัง)
 backend ต้องออกเน็ตไป `https://api.mangosgo.com` ได้ และไม่ตั้ง cookie ของตัวเอง
 
 ## การตั้งค่า (environment)
@@ -146,7 +146,7 @@ backend ต้องออกเน็ตไป `https://api.mangosgo.com` ไ�
 |---|---|---|
 | GET | `/api/maps`, `/api/maps/:id` | รายการ Map / Map เดียว (ใช้เป็น health check ของ web ด้วย) |
 | PUT | `/api/maps/:id` | บันทึก map.json (Author mode; 403 เมื่อ `AUTHOR_ENABLED=false`) |
-| GET | `/api/auth/me` | 200 `{ mode: "member", member, loginUrl, logoutUrl }` · 401 `{ mode: "guest", loginUrl, logoutUrl }` · 503 เมื่อ MANGOs Auth ไม่ตอบ (ADR 0011) |
+| GET | `/api/auth/me` | 200 `{ mode: "member", member, loginUrl, logoutUrl }` · 401 `{ mode: "guest", loginUrl, logoutUrl }` · 503 เมื่อ MANGOs Auth ไม่ตอบ (ADR 0016) |
 | GET / POST / PATCH / DELETE | `/api/gestures…` | ท่าทาง |
 | POST | `/api/stt/reserve?lang=th\|en` | จอง slot → `{ token, expiresInMs }` หรือ 503 `{ busy: true, fallback: "browser" }` |
 | POST | `/api/stt?lang=&token=&prompt=` | body = เสียง (webm/mp4/wav ≤ 8 MB) → `{ text, provider, transcribedBy, timings }` · 503 busy / unavailable |

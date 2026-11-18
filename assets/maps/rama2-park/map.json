@@ -37,18 +37,26 @@
         -227.4
       ],
       "facing": 0,
-      "description": "ลานจอดรถและทางเข้าอุทยานด้านใต้",
+      "description": "ลานจอดรถและทางเข้าอุทยาน (ของจริงอยู่ปลายด้านเหนือ) จุดเริ่มทัวร์",
       "nameEn": "Car Park"
     },
     {
       "id": "puppet-house",
-      "name": "บ้านหุ่นละครเล็ก",
+      "name": "เรือนอาศรมศึกษา (หุ่นกระบอก)",
       "aliases": [
+        "หุ่นกระบอก",
+        "เรือนอาศรมศึกษา",
+        "บ้านหุ่นละครเล็ก",
         "หุ่นละครเล็ก",
         "โรงหุ่น",
         "อาคารหุ่น",
         "puppet house",
-        "puppets"
+        "rod puppets",
+        "puppets",
+        "เรือนหุ่นกระบอก",
+        "อาศรมศึกษา",
+        "ruen asram suksa",
+        "asram suksa"
       ],
       "position": [
         6,
@@ -56,8 +64,8 @@
         -174
       ],
       "facing": 3.142,
-      "description": "อาคารจัดแสดงหุ่นละครเล็กสองชั้น",
-      "nameEn": "Puppet House"
+      "description": "เรือนอาศรมศึกษา ห้องนิทรรศการหุ่นกระบอก ใกล้ลานจอดรถ",
+      "nameEn": "Ruen Asram Suksa (Rod Puppets)"
     },
     {
       "id": "music-pavilion",
@@ -94,13 +102,20 @@
     },
     {
       "id": "canal-houses",
-      "name": "หมู่เรือนไทยริมคลอง",
+      "name": "เรือนฤทัยสรรค์",
       "aliases": [
         "เรือนไทยริมคลอง",
         "เรือนริมคลอง",
         "thai houses",
         "canal houses",
-        "canal-side thai houses"
+        "canal-side thai houses",
+        "หมู่เรือนไทยริมคลอง",
+        "ฤทัยสรรค์",
+        "พิพิธภัณฑ์วิถีไทย",
+        "พิพิธภัณฑ์มรดกทางวัฒนธรรมอัมพวา",
+        "ruen ruethaisan",
+        "ruethaisan",
+        "thai way of life museum"
       ],
       "position": [
         30,
@@ -108,19 +123,25 @@
         -12
       ],
       "facing": 2.498,
-      "description": "หมู่เรือนไทยยกพื้นมีทางเดินเชื่อมริมคลอง",
-      "nameEn": "Canal-side Thai Houses"
+      "description": "หมู่เรือนไทย 5 หลังทางตะวันออก ริมคลอง (พิพิธภัณฑ์วิถีไทยต้นกรุงรัตนโกสินทร์ และพิพิธภัณฑ์มรดกทางวัฒนธรรมอัมพวา)",
+      "nameEn": "Ruen Ruethaisan"
     },
     {
       "id": "rama2-entrance",
-      "name": "ทางขึ้นพิพิธภัณฑ์ ร.2",
+      "name": "ทางขึ้นเรือนอาวุธสร้าง",
       "aliases": [
         "พิพิธภัณฑ์ ร.2",
         "พิพิธภัณฑ์รัชกาลที่ 2",
         "พิพิธภัณฑ์",
         "rama 2 museum",
         "museum",
-        "rama ii museum stairs"
+        "rama ii museum stairs",
+        "ทางขึ้นพิพิธภัณฑ์ ร.2",
+        "เรือนอาวุธสร้าง",
+        "อาวุธสร้าง",
+        "พิพิธภัณฑ์พระราชประวัติ",
+        "ruen awutsang",
+        "awutsang"
       ],
       "position": [
         -30.58,
@@ -128,19 +149,21 @@
         76
       ],
       "facing": 3.139,
-      "description": "บันไดทางขึ้นหมู่เรือนไทยพิพิธภัณฑ์ ร.2",
-      "nameEn": "Rama II Museum Stairs"
+      "description": "บันไดทางขึ้นด้านใต้ของเรือนอาวุธสร้าง (พิพิธภัณฑ์พระราชประวัติ ร.2)",
+      "nameEn": "Ruen Awutsang Stairs"
     },
     {
       "id": "central-deck",
-      "name": "ชานกลางเรือน",
+      "name": "ชานกลาง (เรือนอาวุธสร้าง)",
       "aliases": [
         "ชานเรือน",
         "ชานกลาง",
         "ชาน",
         "courtyard",
         "deck",
-        "central deck"
+        "central deck",
+        "ชานกลางเรือน",
+        "ชานเรือนอาวุธสร้าง"
       ],
       "position": [
         -30.56,
@@ -148,17 +171,19 @@
         56.25
       ],
       "facing": 3.138,
-      "description": "ชานโล่งกลางหมู่เรือน ร.2",
-      "nameEn": "Central Deck"
+      "description": "ชานโล่งกลางเรือนอาวุธสร้าง",
+      "nameEn": "Central Deck (Ruen Awutsang)"
     },
     {
       "id": "main-hall",
-      "name": "เรือนใหญ่",
+      "name": "เรือนใหญ่ (เรือนอาวุธสร้าง)",
       "aliases": [
         "เรือนประธาน",
         "หอใหญ่",
         "main hall",
-        "main house"
+        "main house",
+        "เรือนใหญ่",
+        "เรือนแฝด"
       ],
       "position": [
         -30.5,
@@ -166,17 +191,20 @@
         35.25
       ],
       "facing": 3.142,
-      "description": "เรือนประธานของหมู่เรือน ร.2",
-      "nameEn": "Main Hall"
+      "description": "เรือนแฝดหลังใหญ่ท้ายชาน ด้านเหนือของเรือนอาวุธสร้าง",
+      "nameEn": "Main Hall (Ruen Awutsang)"
     },
     {
       "id": "right-house",
-      "name": "เรือนด้านขวา",
+      "name": "เรือนปีกตะวันตก (เรือนอาวุธสร้าง)",
       "aliases": [
         "เรือนขวา",
         "ฝั่งขวา",
-        "right house",
-        "right-hand house"
+        "เรือนด้านขวา",
+        "ปีกตะวันตก",
+        "เรือนฝั่งตะวันตก",
+        "west wing",
+        "west house"
       ],
       "position": [
         -39,
@@ -184,17 +212,20 @@
         51.55
       ],
       "facing": -1.571,
-      "description": "หน้าเรือนบริวารฝั่งขวาเมื่อเดินเข้าจากบันได (ยืนบนชาน หันหน้าเข้าเรือน)",
-      "nameEn": "Right-hand House"
+      "description": "หน้าเรือนปีกตะวันตก (ยืนบนชาน หันหน้าเข้าเรือน) เดินขึ้นจากบันไดจะอยู่ทางซ้ายมือ",
+      "nameEn": "West Wing (Ruen Awutsang)"
     },
     {
       "id": "left-house",
-      "name": "เรือนด้านซ้าย",
+      "name": "เรือนปีกตะวันออก (เรือนอาวุธสร้าง)",
       "aliases": [
         "เรือนซ้าย",
         "ฝั่งซ้าย",
-        "left house",
-        "left-hand house"
+        "เรือนด้านซ้าย",
+        "ปีกตะวันออก",
+        "เรือนฝั่งตะวันออก",
+        "east wing",
+        "east house"
       ],
       "position": [
         -19.7,
@@ -202,8 +233,8 @@
         51.59
       ],
       "facing": 1.571,
-      "description": "หน้าเรือนบริวารฝั่งซ้ายเมื่อเดินเข้าจากบันได (ยืนบนชาน หันหน้าเข้าเรือน)",
-      "nameEn": "Left-hand House"
+      "description": "หน้าเรือนปีกตะวันออก (ยืนบนชาน หันหน้าเข้าเรือน) เดินขึ้นจากบันไดจะอยู่ทางขวามือ",
+      "nameEn": "East Wing (Ruen Awutsang)"
     },
     {
       "id": "pond-bridge",
@@ -236,17 +267,23 @@
         108.1
       ],
       "facing": 2.554,
-      "description": "ศาลาเล็กสีทองในสระ (ยืนชมจากริมสระ)",
+      "description": "ศาลาเล็กสีทองบนฝั่งตะวันตกของลำน้ำในสระ (ยืนชมจากริมสระ)",
       "nameEn": "Pond Pavilion"
     },
     {
       "id": "north-end",
-      "name": "ปลายถนนด้านเหนือ",
+      "name": "ท่าน้ำริมแม่น้ำแม่กลอง (ปลายด้านใต้)",
       "aliases": [
         "ปลายถนน",
         "สุดถนน",
-        "north end",
-        "north end of the road"
+        "ปลายถนนด้านเหนือ",
+        "ท่าน้ำ",
+        "แม่น้ำแม่กลอง",
+        "ริมแม่น้ำ",
+        "ปลายด้านใต้",
+        "river",
+        "river landing",
+        "south end"
       ],
       "position": [
         14,
@@ -254,8 +291,8 @@
         250
       ],
       "facing": 0,
-      "description": "ปลายถนนสายหลักด้านเหนือของอุทยาน",
-      "nameEn": "North End of the Road"
+      "description": "ปลายถนนสายหลัก ด้านใต้ของอุทยานจริงซึ่งจรดแม่น้ำแม่กลอง (ในโลก 3D ยังไม่มีแม่น้ำ)",
+      "nameEn": "Mae Klong River Landing (South End)"
     }
   ],
   "connectors": [

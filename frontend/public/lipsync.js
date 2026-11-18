@@ -56,24 +56,37 @@ export class LipSync {
     this.cues = [];
     this.clock = null; // () => seconds into the playing audio, or null when silent
     this.shape = 'X';
+    this.level = 0; // mouth opening from loudness, used while there are no cues (0 … 1)
   }
 
-  /** Follow these cues on the given audio element's clock until it ends. */
-  play(cues, audio) {
+  /**
+   * Follow these cues on a clock until it ends: an <audio> element, or a function giving seconds into the sound
+   * (null once it has ended), e.g. the Guide voice playing through Web Audio.
+   */
+  play(cues, clock) {
     this.cues = cues;
-    this.clock = () => (audio.paused || audio.ended ? null : audio.currentTime);
+    this.clock = typeof clock === 'function' ? clock : () => (clock.paused || clock.ended ? null : clock.currentTime);
   }
 
   stop() { this.cues = []; this.clock = null; }
 
+  /** True while cues are being followed on a running clock (the loudness mouth then stays out of the way). */
+  get speaking() { return Boolean(this.cues.length && this.clock?.() != null); }
+
+  /** Open the mouth by loudness (0 … 1) until cues arrive, so an Avatar talks from the first syllable. */
+  setLevel(level) { this.level = Math.max(0, Math.min(1, level)); }
+
   update(dt) {
     const elapsed = this.clock?.();
-    if (elapsed == null || !this.cues.length) { this.goal = {}; this.shape = 'X'; }
+    if (elapsed == null || !this.cues.length) { this.goal = this.level > 0.02 ? { aa: this.level * 0.7, O: this.level * 0.15 } : {}; this.shape = 'X'; }
     else {
       const frame = sampleMouthCues(this.cues, elapsed);
       this.shape = frame.shape;
       this.goal = visemeWeights(frame.weights);
     }
+    // Idle and closed: leave the morphs to other drivers (the Guide's loudness face moves the same visemes).
+    const idle = !Object.keys(this.goal).length && Object.values(this.current).every(value => value < 0.001);
+    if (idle) { this.current = {}; return; }
     const alpha = 1 - Math.exp(-14 * dt); // Companion SMOOTH_SPEED
     for (const viseme of Object.keys(VISEME_ALIASES)) {
       const next = (this.current[viseme] ?? 0) + ((this.goal[viseme] ?? 0) - (this.current[viseme] ?? 0)) * alpha;

@@ -1,7 +1,7 @@
 import { pageUrl } from './base.js';
 
 /**
- * Guest or Member (ADR 0011). The page always opens as a Guest; GET api/auth/me upgrades it to a Member when the
+ * Guest or Member (ADR 0016). The page always opens as a Guest; GET api/auth/me upgrades it to a Member when the
  * Visitor already has a MANGOs Session (the shared .mangosgo.com cookie, which the page itself cannot read).
  * Where to log in and out comes from the server's config. Nothing here redirects on its own.
  */
@@ -19,9 +19,12 @@ export async function loadSession() {
   }
 }
 
-/** What each mode may use. Every Member-only feature checks here, so later ones (Multiplayer) plug in at one place. */
+/**
+ * What each mode may use. Everyone picks among the built-in Avatars; Member-only features (the MANGOs Avatar
+ * library, then Multiplayer) are added here, so they plug in at one place.
+ */
 export function features(session) {
-  return { avatarPicker: session.mode === 'member' };
+  return { avatarPicker: true };
 }
 
 /** MANGOs login page; MANGOs sends the Visitor back to this exact page, now with the shared session. */
@@ -46,10 +49,11 @@ export async function logout(session, { onFallback = () => {} } = {}) {
   }
 }
 
-/** The Member's last chosen Avatar, per MANGOs user id. Storage may be blocked; then nothing is remembered. */
+/** Last chosen Avatar in this browser: per MANGOs user id for a Member, one shared entry for Guests. */
+const avatarKey = session => `aiavatar.avatar.${session.member ? session.member.id : 'guest'}`;
 export function savedAvatar(session) {
-  try { return session.member ? localStorage.getItem(`aiavatar.avatar.${session.member.id}`) : null; } catch { return null; }
+  try { return localStorage.getItem(avatarKey(session)); } catch { return null; } // storage blocked: nothing remembered
 }
 export function saveAvatar(session, id) {
-  try { if (session.member) localStorage.setItem(`aiavatar.avatar.${session.member.id}`, id); } catch { /* optional */ }
+  try { localStorage.setItem(avatarKey(session), id); } catch { /* optional */ }
 }

@@ -34,6 +34,8 @@
     </label>
     <h1 id="map-title" data-i18n="loading">กำลังโหลด…</h1>
     <span id="mode-badge" class="badge" hidden data-i18n="author.mode">Author mode</span>
+    <button id="record-mode" class="top-button" type="button" aria-pressed="false" data-i18n="record.mode">🎬 โหมด Record</button>
+    <button id="open-recordings" class="top-button" type="button" data-i18n="recordings.open">📼 Replay</button>
     <div id="session" class="session" data-mode="guest">
       <span id="session-name" class="session-name muted"></span>
       <img id="session-image" class="session-image" alt="" hidden>
@@ -57,20 +59,23 @@
             <span class="visually-hidden" data-i18n="avatar.pick">Avatar</span>
             <select id="avatar-select" data-i18n-aria-label="avatar.pick"></select>
           </label>
-          <p id="avatar-member-only" class="muted small" data-i18n="avatar.memberOnly" hidden>เข้าสู่ระบบ MANGOs เพื่อเปลี่ยน Avatar</p>
         </section>
-        <section>
+                <section id="show-section">
           <h2 data-i18n="show">แสดงในฉาก</h2>
           <label class="switch"><input type="checkbox" id="toggle-pins" checked><span data-i18n="show.pins">ชื่อ Pin</span></label>
           <label class="switch"><input type="checkbox" id="toggle-avatar-name" checked><span data-i18n="show.avatar">ชื่อ Avatar</span></label>
           <label class="switch"><input type="checkbox" id="toggle-flash"><span data-i18n="show.flash">Flash speed</span></label>
         </section>
-        <section>
+        <section id="guide-section">
+          <h2 data-i18n="guide.title">ถาม Guide</h2>
+          <p id="guide-here" class="muted small"></p>
+        </section>
+        <section id="gestures-section">
           <h2 data-i18n="gestures">ท่าทาง</h2>
           <div id="gesture-list" class="gesture-list"></div>
           <button id="lipsync-demo" class="secondary" type="button" hidden>🗣 ทดสอบขยับปาก</button>
         </section>
-        <section>
+        <section id="stations-section">
           <h2 id="stations-heading">Station</h2>
           <ul id="station-list" class="station-list"></ul>
         </section>
@@ -117,12 +122,59 @@
           </form>
           <p id="author-status" class="muted" role="status"></p>
         </section>
+        <section id="voice-tools" hidden>
+          <h2 data-i18n="voicePage.title">เสียงของ Guide</h2>
+          <p class="muted small" data-i18n="voicePage.hint"></p>
+          <ul id="voice-profile-list" class="recordings-list"></ul>
+          <form id="voice-form" class="gesture-upload-form" novalidate>
+            <h3 data-i18n="voicePage.add">เพิ่มเสียงใหม่</h3>
+            <div class="row">
+              <button id="voice-record" type="button" class="secondary" data-i18n="voicePage.record">🎙 อัดตัวอย่าง</button>
+              <span id="voice-record-time" class="muted small"></span>
+            </div>
+            <label class="field"><span data-i18n="voicePage.file">หรือเลือกไฟล์เสียง</span><input id="voice-file" type="file" accept="audio/*"></label>
+            <audio id="voice-sample" controls hidden></audio>
+            <label class="field"><span data-i18n="voicePage.transcript">ข้อความที่พูดในตัวอย่าง</span><textarea id="voice-transcript" rows="2" required></textarea></label>
+            <label class="field"><span data-i18n="voicePage.name">ชื่อเสียง</span><input id="voice-name" type="text"></label>
+            <fieldset class="field">
+              <legend data-i18n="voicePage.owner">เจ้าของเสียง</legend>
+              <label><input type="radio" name="voice-ownership" value="self" checked> <span data-i18n="voicePage.self">เสียงของฉันเอง</span></label>
+              <label><input type="radio" name="voice-ownership" value="permission"> <span data-i18n="voicePage.permission">เสียงของคนอื่นที่อนุญาตแล้ว</span></label>
+              <input id="voice-owner-name" type="text" data-i18n-placeholder="voicePage.ownerName">
+            </fieldset>
+            <label class="switch"><input id="voice-consent" type="checkbox"><span data-i18n="voicePage.consent"></span></label>
+            <div class="row"><button id="voice-save" type="submit" data-i18n="voicePage.save">บันทึกเสียง</button></div>
+            <p id="voice-page-status" class="muted small" role="status"></p>
+          </form>
+        </section>
       </div>
     </aside>
 
     <div id="viewport" class="viewport">
       <div id="labels" class="labels" aria-hidden="false"></div>
       <div id="loading" class="loading" role="status" data-i18n="loading.map">กำลังโหลด Map…</div>
+      <div id="speaker-label" class="speaker-label" hidden aria-live="polite"></div>
+      <div id="record-bar" class="record-bar" hidden role="toolbar" data-i18n-aria-label="record.bar">
+        <span id="record-state" class="record-state" data-state="idle"></span>
+        <span id="record-time" class="record-time">00:00</span>
+        <button id="record-start" type="button" data-i18n-title="record.start" data-i18n-aria-label="record.start">⏺</button>
+        <button id="record-pause" type="button" disabled data-i18n-title="record.pause" data-i18n-aria-label="record.pause">⏸</button>
+        <button id="record-stop" type="button" disabled data-i18n-title="record.stop" data-i18n-aria-label="record.stop">⏹</button>
+      </div>
+      <div id="replay-bar" class="replay-bar" hidden role="group" data-i18n-aria-label="replay.bar">
+        <div class="replay-title"><span id="replay-title"></span><button id="replay-close" type="button" class="icon" data-i18n-title="replay.close" data-i18n-aria-label="replay.close">✕</button></div>
+        <input id="replay-seek" class="replay-seek" type="range" min="0" max="1000" value="0" step="1" data-i18n-aria-label="replay.seek">
+        <div class="replay-controls">
+          <button id="replay-play" type="button" data-i18n-aria-label="replay.play">▶</button>
+          <span id="replay-time" class="replay-time">00:00 / 00:00</span>
+          <button id="replay-mute" type="button" aria-pressed="false" data-i18n-aria-label="replay.mute">🔊</button>
+          <input id="replay-volume" type="range" min="0" max="1" step="0.05" value="1" data-i18n-aria-label="replay.volume">
+          <button id="replay-cc" type="button" aria-pressed="true" data-i18n-aria-label="replay.cc">CC</button>
+          <button id="replay-follow" type="button" aria-pressed="false" data-i18n="replay.follow" data-i18n-title="replay.followHint">เดินตาม</button>
+        </div>
+      </div>
+      <div id="replay-caption" class="replay-caption" hidden aria-live="polite"></div>
+      <div id="guide-caption" class="guide-caption" hidden aria-live="polite"></div>
     </div>
 
     <div id="voice-bar" class="voice-bar" data-i18n-aria-label="voice">
@@ -130,13 +182,26 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12h-2Z"/></svg>
       </button>
       <div class="voice-text">
-        <div class="voice-head"><button id="lang" class="lang" type="button" data-i18n-title="lang.switch" data-i18n-aria-label="lang.switch">TH</button><span id="stt-badge" class="stt-badge" hidden></span><div id="voice-status" class="voice-status"></div></div>
+        <div id="chat-log" class="chat-log" hidden aria-live="polite">
+          <p id="chat-question" class="chat-question"></p>
+          <p id="guide-answer-text" class="chat-answer"></p>
+          <div id="guide-answer-stations" class="chat-chips"></div>
+          <ul id="guide-answer-sources" class="chat-sources"></ul>
+        </div>
+        <div id="preset-list" class="preset-row" hidden></div>
+        <div class="voice-head"><button id="chat-toggle" class="chat-toggle" type="button" aria-expanded="false" aria-controls="chat-log" data-i18n-title="chat.toggle" data-i18n-aria-label="chat.toggle">💬<span id="chat-dot" class="chat-dot" hidden></span></button><button id="lang" class="lang" type="button" data-i18n-title="lang.switch" data-i18n-aria-label="lang.switch">TH</button><span id="stt-badge" class="stt-badge" hidden></span><div id="voice-status" class="voice-status"></div></div>
         <form id="command-form" class="command-form">
           <input id="command-input" autocomplete="off" data-i18n-placeholder="voice.input" data-i18n-aria-label="voice.typeLabel">
         </form>
       </div>
     </div>
   </main>
+
+  <dialog id="recordings-dialog" class="pin-card recordings-dialog">
+    <h2 data-i18n="recordings.title">Replay ของ Map นี้</h2>
+    <ul id="recordings-list" class="recordings-list"></ul>
+    <div class="row"><button id="recordings-close" type="button" class="secondary" data-i18n="pin.close">ปิด</button></div>
+  </dialog>
 
   <dialog id="pin-card" class="pin-card">
     <form method="dialog" class="pin-card-close"><button data-i18n-aria-label="pin.close">×</button></form>

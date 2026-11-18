@@ -1,6 +1,6 @@
-# 0011 Login ด้วย MANGOs Session (cookie ของ subdomain) และโหมด Guest / Member
+# 0016 Login ด้วย MANGOs Session (cookie ของ subdomain) และโหมด Guest / Member
 
-สถานะ: ยอมรับ (2026-11-17)
+สถานะ: ยอมรับ (2026-11-17) · แก้ 2026-11-18: Guest เลือก Avatar ของระบบได้ คลัง Avatar ของ MANGOs เป็นของ Member
 
 ทีม DEV deploy เว็บไว้ที่ `https://ai.mangosgo.com/aiavatar/` (k3s บน ntserver02) ซึ่งอยู่ใต้ `*.mangosgo.com`
 MANGOs มีสองวิธีให้เลือก: First-party Subdomain Cookie SSO สำหรับแอปใต้ `*.mangosgo.com` และ Third-party OAuth สำหรับแอปที่อยู่ที่อื่น
@@ -22,8 +22,10 @@ MANGOs มีสองวิธีให้เลือก: First-party Subdomai
 - ใช้ได้เฉพาะเมื่อเว็บอยู่ใต้ `*.mangosgo.com` ถ้าย้ายไปที่อื่น (เช่น Tailscale Funnel ตาม ADR 0010) ให้ตั้ง `MANGOS_AUTH=off`
   ทุกคนจะเป็น Guest ถ้าต้องการ Login ที่นั่นต้องทำ OAuth แยก
 - backend ต้องออกเน็ตไป `api.mangosgo.com` ได้ ถ้า MANGOs Auth ไม่ตอบ หน้าเว็บยังใช้งานแบบ Guest ได้
-- Member ตอนนี้ได้แค่เปลี่ยน Avatar การเลือกจำไว้ใน localStorage แยกตาม MANGOs user id
-  ไฟล์ Avatar ยังเป็นไฟล์ static การล็อกเป็นแค่ระดับหน้าจอ ไม่ใช่การป้องกันไฟล์
+- ทุกคน (Guest และ Member) เลือก Avatar ของระบบได้ (Avaturn, CoolBanana) การเลือกจำไว้ใน localStorage
+  แยกตาม MANGOs user id ของ Member และอีกช่องสำหรับ Guest
+- ของ Member เท่านั้น: Avatar จากคลังของตัวเองใน MANGOs (`GET /avatars`) และ Multiplayer ภายหลัง
+  ยังรอชื่อ field ของ object Avatar และ CORS ของไฟล์โมเดลจากทีม MANGOs
 - Author mode ยังแยกจาก Login เว็บสาธารณะปิดด้วย `AUTHOR_ENABLED=false`
 
 ## ยังต้องยืนยันกับทีม MANGOs

@@ -122,12 +122,16 @@ export class World {
     this.controls.update();
     this.navigation?.dispose();
     this.navigation = null;
+    // Solid meshes: what you walk on and bump into. Roofs, ceilings, clouds and small details are left out, so the
+    // navmesh never reaches a roof and flight passes through them (spec R8.4).
+    const exclude = map.navigation?.exclude ? new RegExp(map.navigation.exclude, 'i') : null;
+    this.solidMeshes = exclude ? this.meshes.filter(m => !exclude.test(m.name)) : this.meshes;
     try {
+      if (!exclude) throw new Error('map.json has no navigation.exclude'); // as before: no navmesh without it
       onProgress('navigation');
       const cached = prepared ? await prepared : null;
       if (cached?.error) console.warn('Prepared walking paths unavailable; rebuilding:', cached.error);
-      const exclude = new RegExp(map.navigation.exclude, 'i');
-      this.navigation = cached?.navigation ?? await Navigation.build(this.meshes.filter(m => !exclude.test(m.name)), { extent });
+      this.navigation = cached?.navigation ?? await Navigation.build(this.solidMeshes, { extent });
       console.info(`navmesh ${map.id}: ${this.navigation.source}, ${this.navigation.loadMs ?? this.navigation.buildMs} ms`);
     } catch (error) {
       console.warn('Navigation unavailable, falling back to straight-line walking:', error);

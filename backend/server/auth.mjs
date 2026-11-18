@@ -1,5 +1,5 @@
 /**
- * MANGOs Session (ADR 0011): a Visitor logged in to MANGOs carries the shared `accessToken` cookie on .mangosgo.com,
+ * MANGOs Session (ADR 0016): a Visitor logged in to MANGOs carries the shared `accessToken` cookie on .mangosgo.com,
  * so this app on ai.mangosgo.com receives it with every same-origin request. The backend validates it with
  * MANGOs Auth (GET /users/me) and never sets a cookie of its own. No cookie or a rejected one means Guest.
  */
