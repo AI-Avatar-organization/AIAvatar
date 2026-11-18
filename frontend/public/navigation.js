@@ -8,6 +8,7 @@ let ready;
  * Agent size matches the Avatar (≈1.8 m tall, 0.25 m radius) and climbs normal stair steps (≤ 0.45 m).
  */
 export class Navigation {
+  /** Walking paths compiled at build time by scripts/build-navigation.mjs (server/navigation.mjs checks they match the Map). */
   static async load(url) {
     const started = performance.now();
     ready ??= init();
@@ -64,6 +65,21 @@ export class Navigation {
     if (!result.success || result.path.length < 2) return null;
     // Callers check whether the path really reaches the goal (see shared/route.mjs).
     return result.path.map(p => [p.x, p.y, p.z]);
+  }
+
+  /** Nearest walkable point to [x,y,z] within `half` metres, or null. */
+  snap([x, y, z], half = { x: 2, y: 3, z: 2 }) {
+    const result = this.query.findNearestPoly({ x, y, z }, { halfExtents: half });
+    if (!result.success || !result.nearestRef) return null;
+    return [result.nearestPoint.x, result.nearestPoint.y, result.nearestPoint.z];
+  }
+
+  /** One step from → to that slides along walls instead of crossing them (Recast moveAlongSurface); null off the navmesh. */
+  move([x, y, z], [tx, ty, tz]) {
+    const start = this.query.findNearestPoly({ x, y, z }, { halfExtents: { x: 1, y: 2, z: 1 } });
+    if (!start.success || !start.nearestRef) return null;
+    const { resultPosition: p } = this.query.moveAlongSurface(start.nearestRef, start.nearestPoint, { x: tx, y: ty, z: tz });
+    return [p.x, p.y, p.z];
   }
 
   dispose() {

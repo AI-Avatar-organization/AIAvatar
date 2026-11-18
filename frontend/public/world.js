@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { Navigation } from './navigation.js';
 import { loadGlb } from './asset-loader.js';
+import { pageUrl } from './base.js';
 
 /** Three.js stage that hosts one Map at a time. Map content always comes from its Map Package. */
 export class World {
@@ -55,10 +56,11 @@ export class World {
     }
     const loader = new GLTFLoader();
     onProgress('model');
+    // Compiled walking paths download while the models load; the Map stays usable if they fail.
     const prepared = map.navigation.prebuilt
-      ? Navigation.load('/aiavatar' + map.navigation.prebuilt).then(navigation => ({ navigation }), error => ({ error }))
+      ? Navigation.load(pageUrl(map.navigation.prebuilt)).then(navigation => ({ navigation }), error => ({ error }))
       : null;
-    const urlOf = file => file.startsWith('/aiavatar/') ? file : file.startsWith('/') ? '/aiavatar' + file : '/aiavatar/maps/' + map.id + '/' + file;
+    const urlOf = file => pageUrl(file.startsWith('/') ? file : `maps/${map.id}/${file}`);
     const [base, ...placed] = await Promise.all([map.scene, ...map.assets.map(a => a.file)].map(file => loadGlb(loader, urlOf(file))));
     const root = new THREE.Group();
     root.name = `map:${map.id}`;
@@ -120,13 +122,17 @@ export class World {
     this.controls.update();
     this.navigation?.dispose();
     this.navigation = null;
+    // Solid meshes: what you walk on and bump into. Roofs, ceilings, clouds and small details are left out, so the
+    // navmesh never reaches a roof and flight passes through them (spec R8.4).
+    const exclude = map.navigation?.exclude ? new RegExp(map.navigation.exclude, 'i') : null;
+    this.solidMeshes = exclude ? this.meshes.filter(m => !exclude.test(m.name)) : this.meshes;
     try {
+      if (!exclude) throw new Error('map.json has no navigation.exclude'); // as before: no navmesh without it
       onProgress('navigation');
       const cached = prepared ? await prepared : null;
       if (cached?.error) console.warn('Prepared walking paths unavailable; rebuilding:', cached.error);
-      const exclude = new RegExp(map.navigation.exclude, 'i');
-      this.navigation = cached?.navigation ?? await Navigation.build(this.meshes.filter(m => !exclude.test(m.name)), { extent });
-      console.info(`navmesh ${map.id}: ${this.navigation.buildMs} ms`);
+      this.navigation = cached?.navigation ?? await Navigation.build(this.solidMeshes, { extent });
+      console.info(`navmesh ${map.id}: ${this.navigation.source}, ${this.navigation.loadMs ?? this.navigation.buildMs} ms`);
     } catch (error) {
       console.warn('Navigation unavailable, falling back to straight-line walking:', error);
     }

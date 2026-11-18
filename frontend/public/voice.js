@@ -4,20 +4,22 @@
  *   - busy / unavailable → Browser STT Fallback (the browser's own speech recognition, which sends audio to an
  *     outside service) when the browser has it, otherwise the Visitor is asked to type.
  */
+import { pageUrl } from './base.js';
+
 const SpeechRecognitionApi = () => window.SpeechRecognition ?? window.webkitSpeechRecognition;
 export const browserSpeechSupported = () => Boolean(SpeechRecognitionApi());
 
 /** Ask for a slot: { token, expiresInMs } or null when the STT Service is full or down. Never waits. */
 export async function reserveSlot(lang) {
   try {
-    const response = await fetch(`/aiavatar/api/stt/reserve?lang=${lang}`, { method: 'POST' });
+    const response = await fetch(pageUrl(`api/stt/reserve?lang=${lang}`), { method: 'POST' });
     return response.ok ? await response.json() : null;
   } catch { return null; }
 }
 
 /** Give an unused slot back early (mic failed, too short, page closed) so the next Visitor gets it. */
 export function releaseSlot(lang, token) {
-  const url = `/aiavatar/api/stt/release?lang=${lang}&token=${encodeURIComponent(token)}`;
+  const url = pageUrl(`api/stt/release?lang=${lang}&token=${encodeURIComponent(token)}`);
   if (!navigator.sendBeacon?.(url)) fetch(url, { method: 'POST', keepalive: true }).catch(() => {});
 }
 
@@ -62,7 +64,7 @@ export class VoiceInput {
 export async function transcribeBlob(blob, lang = 'th', prompt = '', token = '') {
   const query = new URLSearchParams({ lang, prompt, ...(token ? { token } : {}) });
   const sent = performance.now();
-  const response = await fetch(`/aiavatar/api/stt?${query}`, { method: 'POST', headers: { 'Content-Type': blob.type || 'audio/webm' }, body: blob });
+  const response = await fetch(pageUrl(`api/stt?${query}`), { method: 'POST', headers: { 'Content-Type': blob.type || 'audio/webm' }, body: blob });
   const body = await response.json();
   if (!response.ok) throw Object.assign(new Error(body.error ?? ''), { code: body.busy ? 'busy' : body.unavailable ? 'unavailable' : 'failed' });
   return { ...body, clientTimings: { requestMs: Math.round(performance.now() - sent) } }; // request = upload … response back

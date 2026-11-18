@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { proceduralClip } from './procedural-gestures.js';
 import { loadGlb } from './asset-loader.js';
+import { pageUrl } from './base.js';
+import { sourceRig, restOf, isNormalized, retargetClip } from './retarget.js';
 
 /**
  * Load the Gesture Library (gestures/manifest.json via /api/gestures) and turn every entry into an AnimationClip
@@ -9,17 +11,23 @@ import { loadGlb } from './asset-loader.js';
  * away from where locomotion put it.
  */
 export async function loadGestureLibrary(avatar) {
-  const response = await fetch('/aiavatar/api/gestures');
+  const response = await fetch(pageUrl('api/gestures'));
   if (!response.ok) throw new Error((await response.json()).error ?? 'gestures unavailable');
   const library = await response.json();
   const loader = new GLTFLoader();
   const bones = new Set(Object.keys(avatar.bones));
 
+  // Clips are authored on the Avaturn skeleton. A VRM-normalized Avatar (CoolBanana) needs them retargeted;
+  // the source rest pose comes from the first clip file, which carries that skeleton.
+  const firstFile = [library.locomotion.walk, library.locomotion.idle, ...library.gestures].find(entry => entry?.file)?.file;
+  const rig = isNormalized(avatar) && firstFile ? sourceRig((await loadGlb(loader, pageUrl(`gestures/${firstFile}`))).scene) : null;
+  const adapt = clip => rig ? retargetClip(clip, rig, { hipsHeight: avatar.restPosition.Hips?.y }) : clip;
+
   const fromFile = async (file, id) => {
-    const gltf = await loadGlb(loader, `/aiavatar/gestures/${file}`);
+    const gltf = await loadGlb(loader, pageUrl(`gestures/${file}`));
     const source = gltf.animations[0];
     if (!source) throw new Error(`${file} has no animation`);
-    const tracks = source.tracks.filter(track => {
+    const tracks = adapt(source).tracks.filter(track => {
       const [node, property] = track.name.split('.');
       if (!bones.has(node)) return false;
       if (property === 'quaternion') return true;
@@ -34,7 +42,7 @@ export async function loadGestureLibrary(avatar) {
     });
     return new THREE.AnimationClip(id, source.duration, tracks);
   };
-  const clipFor = (entry, id) => entry.procedural ? proceduralClip(entry.procedural, avatar.rest) : fromFile(entry.file, id);
+  const clipFor = (entry, id) => entry.procedural ? adapt(proceduralClip(entry.procedural, rig ? restOf(rig) : avatar.rest)) : fromFile(entry.file, id);
 
   const [idle, walk, ...gestureClips] = await Promise.all([
     clipFor(library.locomotion.idle, 'idle'),

@@ -8,7 +8,8 @@
   },
   "scripts": {
     "start": "node server/index.mjs",
-    "start:all": "node scripts/start-all.mjs"
+    "start:all": "node scripts/start-all.mjs",
+    "build:navigation": "node scripts/build-navigation.mjs"
   },
   "dependencies": {
     "@recast-navigation/three": "0.43.1",

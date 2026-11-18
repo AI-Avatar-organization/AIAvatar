@@ -73,6 +73,12 @@ spec:
           env:
             - name: AUTHOR_ENABLED
               value: "false"
+            - name: MANGOS_AUTH
+              value: "on"
+            - name: MANGOS_API_BASE
+              value: https://api.mangosgo.com/api/v1
+            - name: MANGOS_LOGIN_URL
+              value: https://mangosgo.com/login
             - name: STT_SERVICE_TH
               value: http://aiavatar-stt-th:3401
             - name: STT_SERVICE_EN

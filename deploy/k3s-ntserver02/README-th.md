@@ -1,3 +1,9 @@
+> **หมายเหตุ (17 พ.ย. 2569):** คู่มือนี้เขียนโดยทีม DEV สำหรับ release 20261113-5
+> source รุ่นใหม่รองรับ path `/aiavatar/` เองแล้ว **ข้ามขั้นที่ 2 (`prepare-source.ps1`) และห้ามรันสคริปต์นั้น**
+> ไม่ต้องแก้ `/v/<release>/` ใน index.html (JS/CSS ส่ง `no-cache` + ETag อยู่แล้ว)
+> แต่ยังต้องเปลี่ยน tag ของ image ใน app.yaml ทุก release และ `app.yaml` นี้เพิ่ม env `MANGOS_*` สำหรับ Login MANGOs (ADR 0016)
+> คำสั่ง grep ในขั้นที่ 4 ให้เปลี่ยนเป็น `grep -n 'href="styles.css"' frontend/public/index.html` และ `grep -n AUTHOR_ENABLED backend/server/index.mjs`
+
 **คู่มือ deploy AI Avatar ไปยัง https://ai.mangosgo.com/aiavatar/**
 
 จัดเตรียมวันที่ 13 พฤศจิกายน 2569 สำหรับโครงสร้างโปรเจคปัจจุบัน และ k3s แบบหนึ่ง node บน ntserver02

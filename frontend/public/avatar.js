@@ -1,13 +1,38 @@
 import * as THREE from 'three';
+import { WALK_SPEED, tripSpeed } from './shared/speed.mjs';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
+import { LipSync } from './lipsync.js';
 import { loadGlb } from './asset-loader.js';
+import { pageUrl } from './base.js';
 
-const WALK_SPEED = 1.35;       // m/s
-const MAX_TRIP_SECONDS = 15;   // long trips speed up so a walk across the whole Map stays short
-const MAX_SPEED = 12;          // m/s
+/**
+ * Built-in Avatars anyone can pick (ADR 0016); the first entry is the default.
+ * VRM 0.x faces -Z, so it is turned to face +Z like the Avaturn GLB.
+ */
+export const AVATARS = {
+  avaturn: { url: 'assets/avatar.glb', name: 'Avaturn', nameEn: 'Avaturn' },
+  coolbanana: { url: 'assets/avatars/coolbanana/coolbanana.vrm', turn: Math.PI, name: 'CoolBanana', nameEn: 'CoolBanana' }
+};
+export const DEFAULT_AVATAR = Object.keys(AVATARS)[0];
+
 const TURN_SPEED = 6;          // rad/s
 const ARRIVE = 0.08;           // m
+
+/**
+ * GLTFLoader names morph targets only from mesh.extras.targetNames; VRM exporters (and some others) put the names
+ * on primitive.extras instead, which would leave Viseme morphs named "0", "1"… Fill the dictionary from there.
+ */
+function nameMorphsFromPrimitives(gltf) {
+  const json = gltf.parser.json;
+  gltf.scene.traverse(object => {
+    if (!object.morphTargetInfluences) return;
+    const where = gltf.parser.associations.get(object);
+    const mesh = json.meshes?.[where?.meshes];
+    const names = mesh?.extras?.targetNames ?? mesh?.primitives?.[where?.primitives ?? 0]?.extras?.targetNames;
+    if (names?.length === object.morphTargetInfluences.length) object.morphTargetDictionary = Object.fromEntries(names.map((name, i) => [name, i]));
+  });
+}
 
 const angleTo = (from, to) => Math.atan2(Math.sin(to - from), Math.cos(to - from));
 
@@ -17,9 +42,15 @@ const angleTo = (from, to) => Math.atan2(Math.sin(to - from), Math.cos(to - from
  * Before the Gesture Library loads, a procedural idle/walk pose keeps the Avatar out of its T-pose.
  */
 export class Avatar {
-  static async load(url = '/aiavatar/assets/avatar.glb') {
-    const gltf = await loadGlb(new GLTFLoader(), url);
-    return new Avatar(clone(gltf.scene), gltf.animations);
+  static async load(id = DEFAULT_AVATAR) {
+    const entry = AVATARS[id] ?? AVATARS[DEFAULT_AVATAR];
+    const gltf = await loadGlb(new GLTFLoader(), pageUrl(entry.url));
+    nameMorphsFromPrimitives(gltf);
+    const model = clone(gltf.scene);
+    if (entry.turn) model.rotation.y = entry.turn;
+    const avatar = new Avatar(model, gltf.animations);
+    avatar.id = AVATARS[id] ? id : DEFAULT_AVATAR;
+    return avatar;
   }
 
   constructor(root, animations = []) {
@@ -31,7 +62,8 @@ export class Avatar {
     this.mixer = new THREE.AnimationMixer(root);
     this.bones = {};
     root.traverse(object => {
-      if (object.isBone) this.bones[object.name.replace(/^mixamorig:?/, '')] = object;
+      // Gesture clips address bones by bare Mixamo names; rename prefixed bones (mixamorig:Hips → Hips) on this clone.
+      if (object.isBone) { object.name = object.name.replace(/^mixamorig:?/, ''); this.bones[object.name] = object; }
       if (object.isMesh) { object.castShadow = true; object.frustumCulled = false; }
     });
     this.rest = Object.fromEntries(Object.entries(this.bones).map(([name, bone]) => [name, bone.quaternion.clone()]));
@@ -43,6 +75,7 @@ export class Avatar {
     this.target = null;
     this.groundAt = null;
     this.listeners = new Set();
+    this.lipSync = LipSync.for(root); // null when the Avatar has no Viseme morphs (Gesture only)
     this.height = new THREE.Box3().setFromObject(root).getSize(new THREE.Vector3()).y || 1.75;
     this.actions = null;
     this.gesture = null;      // { id, action, loop, resolve }
@@ -124,7 +157,7 @@ export class Avatar {
       let distance = 0;
       let previous = this.root.position;
       for (const point of waypoints) { distance += Math.hypot(point.x - previous.x, point.z - previous.z); previous = point; }
-      const speed = this.flash ? 60 : THREE.MathUtils.clamp(distance / MAX_TRIP_SECONDS, WALK_SPEED, MAX_SPEED);
+      const speed = tripSpeed(distance, this.flash); // Flash: ×3 the trip speed (spec R8.5), not a jump
       this.target = { position: waypoints.at(-1), waypoints, index: 0, onPath: Boolean(path), segmentStart: this.root.position.clone(),
         facing, resolve, meta, speed, distance };
       this.#setState('walking');
@@ -143,9 +176,33 @@ export class Avatar {
   update(dt) {
     this.time += dt;
     this.mixer.update(dt);
+    this.lipSync?.update(dt);
     // Locomotion in ≤ 50 ms steps so low frame rates cannot overshoot waypoints.
     for (let left = dt; left > 1e-6; left -= 0.05) this.#move(Math.min(0.05, left));
     if (this.actions) this.#blend(dt); else this.#pose();
+    this.#flightPose(dt);
+  }
+
+  /** Flying (spec R8.4) or not; reported as state "flying" so a Recording can replay the pose. */
+  setFlying(on) {
+    if (Boolean(this.flying) === Boolean(on)) return;
+    this.flying = Boolean(on);
+    if (on) { this.cancel(); this.puppet = null; }
+    this.#setState(on ? 'flying' : 'idle');
+  }
+
+  /**
+   * Procedural flight pose until a real clip exists: the body leans forward and the arms spread toward the T-pose
+   * the Avatar was rigged in. Applied on top of whatever the mixer or #pose set this frame, faded in and out.
+   */
+  #flightPose(dt) {
+    this.flyBlend = THREE.MathUtils.clamp((this.flyBlend ?? 0) + (this.flying ? 1 : -1) * dt * 3, 0, 1);
+    const k = this.flyBlend;
+    const body = this.root.children[0];
+    if (body) body.rotation.x = 0.35 * k;
+    if (!k) return;
+    for (const name of ['LeftArm', 'RightArm']) this.bones[name]?.quaternion.slerp(this.rest[name], 0.8 * k);
+    for (const name of ['LeftUpLeg', 'RightUpLeg']) this.bones[name]?.quaternion.slerp(this.rest[name], 0.9 * k);
   }
 
   #move(dt) {
@@ -201,9 +258,39 @@ export class Avatar {
         }
       }
       this.#emit({ type: 'moved' });
+    } else if (this.puppet?.walking) {
+      // Moved from outside (Replay): play the walk cycle at the speed the recorded Avatar moves.
+      this.phase += dt * 7.2 * Math.sqrt(Math.max(this.puppet.speed, 0.3) / WALK_SPEED);
+      this.walkBlend = Math.min(1, this.walkBlend + dt * 4);
     } else {
       this.walkBlend = Math.max(0, this.walkBlend - dt * 5);
     }
+  }
+
+  /**
+   * Replay drives this Avatar from a Recording instead of walkTo: place it at a pose and say whether it walks.
+   * speed is metres per second along the recorded path (for the walk cycle's pace).
+   */
+  setPuppet(position, rotY, walking, speed = WALK_SPEED) {
+    this.root.position.fromArray(position);
+    this.root.rotation.y = rotY;
+    this.puppet = { walking, speed };
+  }
+
+  /**
+   * Moved by the Visitor's keys (WASD) or by Follow, not by walkTo: play the walk cycle at `speed` and report
+   * walking/idle as a walk does, so a Recording knows when the Avatar walked (spec R8.3).
+   */
+  drive(walking, speed = WALK_SPEED) {
+    this.puppet = walking ? { walking: true, speed: Math.max(speed, 0.3) } : null;
+    if (this.state !== 'gesture') this.#setState(walking ? 'walking' : 'idle');
+  }
+
+  /** Keep the playing Gesture at a given time into its clip (Replay seek); returns false if it is not playing. */
+  setGestureTime(id, seconds) {
+    if (this.gesture?.id !== id) return false;
+    this.gesture.action.time = Math.min(seconds, this.gesture.action.getClip().duration);
+    return true;
   }
 
   /** Mixer weights: gesture fades in over idle/walk; a finished gesture fades back out. */
@@ -216,7 +303,7 @@ export class Avatar {
     idle.setEffectiveWeight((1 - w) * (1 - g));
     if (walk) {
       walk.setEffectiveWeight(w * (1 - g));
-      walk.timeScale = THREE.MathUtils.clamp((this.target?.speed ?? WALK_SPEED) / WALK_SPEED, 0.8, 2.5);
+      walk.timeScale = THREE.MathUtils.clamp((this.target?.speed ?? this.puppet?.speed ?? WALK_SPEED) / WALK_SPEED, 0.8, 2.5);
     }
     if (this.gesture) this.gesture.action.setEffectiveWeight(g);
     if (this.fading) {

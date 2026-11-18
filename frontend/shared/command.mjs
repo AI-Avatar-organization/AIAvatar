@@ -14,7 +14,7 @@ const GOTO_VERBS = ['พาฉันไปที่', 'พาผมไปที�
   'takemeto', 'bringmeto', 'walkto', 'workto', 'wokto', 'goto', 'headto', 'moveto', 'navigateto', 'runto', 'gotothe', 'go'];
 const STOP_WORDS = ['หยุด', 'หยุดเดิน', 'พอแล้ว', 'stop', 'halt', 'wait'];
 const SPLIT = /\s*(?:แล้วก็|แล้ว|จากนั้น|ต่อด้วย|และ|,|;|\bthen\b|\band then\b|\band\b)\s*/i;
-const QUESTION = /(อะไร|ทำไม|อย่างไร|ยังไง|เมื่อไร|ใคร|ไหม|มั้ย|หรือเปล่า|\?|what|why|how|when|who|where is|tell me)/i;
+const QUESTION = /(อะไร|ทำไม|อย่างไร|ยังไง|เมื่อไร|เมื่อไหร่|ใคร|ไหม|มั้ย|หรือเปล่า|กี่|เท่าไร|เท่าไหร่|ที่ไหน|\?|what|why|how|when|who|where is|tell me)/i;
 
 /** Lowercase, drop punctuation, polite particles and all whitespace (Thai has no word spaces). */
 export function normalize(text) {

@@ -13,7 +13,16 @@ RUN rm -f /etc/apt/apt.conf.d/docker-clean
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update \
- && apt-get install -y --no-install-recommends ffmpeg python3 python3-venv ca-certificates
+ && apt-get install -y --no-install-recommends ffmpeg python3 python3-venv ca-certificates curl unzip
+
+# ── Lip-sync: Rhubarb (x86_64 Linux build; needs --platform linux/amd64 on ARM hosts) ──
+ARG RHUBARB_VERSION=1.14.0
+ARG RHUBARB_SHA256=a9a9074862cff47b2d59b8bf399a678a3b0b74f9452ad6ad94cb292913dd8667
+RUN curl -fsSL -o /tmp/rhubarb.zip "https://github.com/DanielSWolf/rhubarb-lip-sync/releases/download/v${RHUBARB_VERSION}/Rhubarb-Lip-Sync-${RHUBARB_VERSION}-Linux.zip" \
+ && echo "${RHUBARB_SHA256}  /tmp/rhubarb.zip" | sha256sum -c - \
+ && unzip -q /tmp/rhubarb.zip -d /opt \
+ && mv "/opt/Rhubarb-Lip-Sync-${RHUBARB_VERSION}-Linux" /opt/rhubarb \
+ && rm /tmp/rhubarb.zip && chmod +x /opt/rhubarb/rhubarb && /opt/rhubarb/rhubarb --version
 
 # ── Python: CPU-only torch (PyPI's x86 torch is the CUDA build, several GB larger) ─────
 RUN python3 -m venv /opt/venv
@@ -44,9 +53,10 @@ COPY --chown=node:node frontend/shared ./shared
 COPY --chown=node:node assets/models ./assets
 COPY --chown=node:node assets/maps ./maps
 COPY --chown=node:node assets/gestures ./gestures
+# Compile walking paths once (checks every Station is reachable); the page downloads them instead of building a navmesh.
 RUN node scripts/build-navigation.mjs
 
-ENV NODE_ENV=production HOST=0.0.0.0 PORT=3300 WHISPER_PYTHON=/opt/venv/bin/python STT_DEVICE=cpu
+ENV NODE_ENV=production HOST=0.0.0.0 PORT=3300 WHISPER_PYTHON=/opt/venv/bin/python STT_DEVICE=cpu RHUBARB_PATH=/opt/rhubarb/rhubarb
 EXPOSE 3300
 VOLUME ["/app/maps", "/app/gestures"]
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \
